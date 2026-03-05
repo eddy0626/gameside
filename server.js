@@ -10,6 +10,9 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust proxy (Railway, Heroku, etc. terminate SSL at the proxy)
+app.set('trust proxy', true);
+
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || `http://localhost:${PORT}`,

@@ -29,7 +29,9 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/auth/google/callback',
+      callbackURL: process.env.FRONTEND_URL
+        ? `${process.env.FRONTEND_URL}/auth/google/callback`
+        : '/auth/google/callback',
     },
     (accessToken, refreshToken, profile, done) => {
       const emailObj = profile.emails && profile.emails[0];
