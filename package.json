@@ -1,0 +1,30 @@
+{
+  "name": "gameside",
+  "version": "1.0.0",
+  "description": "GameSide - HTML5 game hosting platform",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:api": "jest tests/api --forceExit --detectOpenHandles",
+    "test:e2e": "npx playwright test",
+    "test:all": "npm run test:api && npm run test:e2e"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}

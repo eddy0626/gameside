@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Showcase - Play</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap">
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" class="header__back-link">&larr; Back to Gallery</a>
+        <h1 class="header__title">Game Showcase</h1>
+    </header>
+
+    <main>
+        <div class="game-player">
+            <div class="game-player__wrapper">
+                <iframe class="game-player__iframe"
+                        sandbox="allow-scripts"
+                        title="Game Player"
+                        src="">
+                </iframe>
+            </div>
+            <button class="game-player__fullscreen-btn" type="button">Fullscreen</button>
+            <div class="game-player__info">
+                <h2 class="game-player__title"></h2>
+                <p class="game-player__description"></p>
+                <p class="game-player__author"></p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Command Palette (Ctrl+K / Cmd+K) -->
+    <div class="cmdk-overlay" id="cmdk-overlay">
+        <div class="cmdk" role="dialog" aria-modal="true" aria-label="Command palette">
+            <div class="cmdk__header">
+                <svg class="cmdk__search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="cmdk__input" id="cmdk-input" placeholder="Search games..." autocomplete="off" aria-label="Search games in command palette">
+                <kbd class="cmdk__kbd">ESC</kbd>
+            </div>
+            <div class="cmdk__list" id="cmdk-list">
+                <!-- Items rendered by app.js -->
+            </div>
+            <div class="cmdk__footer">
+                <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> Navigate</span>
+                <span><kbd>Enter</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="features/game-detail.js" defer></script>
+    <script src="features/recent-plays.js" defer></script>
+    <script src="features/upload-modal.js" defer></script>
+    <script src="features/auth-ui.js" defer></script>
+
+    <footer class="footer">
+        <p>&copy; 2026 Game Showcase. All rights reserved.</p>
+    </footer>
+</body>
+</html>

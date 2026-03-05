@@ -1,0 +1,38 @@
+[
+  {
+    "id": "sample-game",
+    "title": "Sample Platformer",
+    "folder": "sample-game",
+    "thumbnail": "games/sample-game/thumbnail.svg",
+    "description": "A simple HTML5 canvas platformer game.",
+    "author": "Team",
+    "tags": ["platformer", "action"],
+    "date": "2026-03-05",
+    "plays": 0,
+    "featured": true
+  },
+  {
+    "id": "space-shooter",
+    "title": "Space Shooter",
+    "folder": "space-shooter",
+    "thumbnail": "games/space-shooter/thumbnail.svg",
+    "description": "Dodge asteroids and shoot enemies in space.",
+    "author": "Team",
+    "tags": ["shooter", "arcade"],
+    "date": "2026-03-05",
+    "plays": 0,
+    "featured": false
+  },
+  {
+    "id": "puzzle-quest",
+    "title": "Puzzle Quest",
+    "folder": "puzzle-quest",
+    "thumbnail": "games/puzzle-quest/thumbnail.svg",
+    "description": "Solve challenging puzzles to advance levels.",
+    "author": "Team",
+    "tags": ["puzzle", "strategy"],
+    "date": "2026-03-05",
+    "plays": 0,
+    "featured": false
+  }
+]

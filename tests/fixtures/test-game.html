@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><title>Test Game</title></head>
+<body>
+<canvas id="game" width="320" height="240"></canvas>
+<script>
+  const ctx = document.getElementById('game').getContext('2d');
+  ctx.fillStyle = '#00ff00';
+  ctx.fillRect(0, 0, 320, 240);
+  ctx.fillStyle = '#000';
+  ctx.font = '20px sans-serif';
+  ctx.fillText('Test Game', 100, 120);
+</script>
+</body>
+</html>

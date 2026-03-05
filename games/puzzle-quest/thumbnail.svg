@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
+  <rect width="200" height="150" rx="8" fill="#2d132c"/>
+  <!-- Puzzle grid -->
+  <rect x="35" y="25" width="40" height="40" rx="4" fill="#ee4540"/>
+  <text x="55" y="51" text-anchor="middle" fill="#fff" font-family="monospace" font-size="16" font-weight="bold">1</text>
+  <rect x="80" y="25" width="40" height="40" rx="4" fill="#c72c41"/>
+  <text x="100" y="51" text-anchor="middle" fill="#fff" font-family="monospace" font-size="16" font-weight="bold">2</text>
+  <rect x="125" y="25" width="40" height="40" rx="4" fill="#801336"/>
+  <text x="145" y="51" text-anchor="middle" fill="#fff" font-family="monospace" font-size="16" font-weight="bold">3</text>
+  <rect x="35" y="70" width="40" height="40" rx="4" fill="#510a32"/>
+  <text x="55" y="96" text-anchor="middle" fill="#fff" font-family="monospace" font-size="16" font-weight="bold">4</text>
+  <rect x="80" y="70" width="40" height="40" rx="4" fill="#6a0572"/>
+  <text x="100" y="96" text-anchor="middle" fill="#fff" font-family="monospace" font-size="16" font-weight="bold">5</text>
+  <!-- Empty space -->
+  <rect x="125" y="70" width="40" height="40" rx="4" fill="none" stroke="#6a0572" stroke-width="2" stroke-dasharray="4"/>
+  <!-- Title -->
+  <text x="100" y="138" text-anchor="middle" fill="#f1e1a6" font-family="monospace" font-size="10">Puzzle Quest</text>
+</svg>

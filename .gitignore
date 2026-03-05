@@ -1,0 +1,30 @@
+bin/
+obj/
+/packages/
+riderModule.iml
+/_ReSharper.Caches/
+
+# Environment variables (secrets)
+.env
+.env.*
+
+# IDE
+.idea/
+*.suo
+*.user
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+
+# Upload temp files
+uploads_tmp/
+
+# Test artifacts
+test-results/
+
+# Claude Code
+.claude/

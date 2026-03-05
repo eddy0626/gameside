@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150" viewBox="0 0 200 150">
+  <rect width="200" height="150" rx="8" fill="#1a1a2e"/>
+  <rect x="0" y="120" width="200" height="30" fill="#0f3460"/>
+  <rect x="0" y="120" width="200" height="4" fill="#53d769"/>
+  <rect x="60" y="80" width="80" height="12" fill="#0f3460"/>
+  <rect x="60" y="80" width="80" height="3" fill="#53d769"/>
+  <!-- Player character -->
+  <rect x="85" y="52" width="22" height="28" rx="2" fill="#e94560"/>
+  <rect x="90" y="58" width="5" height="5" fill="#fff"/>
+  <rect x="99" y="58" width="5" height="5" fill="#fff"/>
+  <!-- Coin -->
+  <circle cx="140" cy="66" r="8" fill="#ffd700" stroke="#daa520" stroke-width="1.5"/>
+  <!-- Title -->
+  <text x="100" y="145" text-anchor="middle" fill="#fff" font-family="monospace" font-size="10">Platformer</text>
+</svg>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle Quest</title>
+    <style>
+        * { margin: 0; padding: 0; }
+        body { background: #2d132c; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; font-family: monospace; }
+        canvas { cursor: pointer; border: 2px solid #6a0572; }
+    </style>
+</head>
+<body>
+    <canvas id="game" width="400" height="480"></canvas>
+    <script>
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+
+        const COLS = 4;
+        const ROWS = 4;
+        const TILE_SIZE = 90;
+        const PADDING = 8;
+        const BOARD_X = (canvas.width - COLS * (TILE_SIZE + PADDING) + PADDING) / 2;
+        const BOARD_Y = 60;
+
+        const COLORS = ['#ee4540', '#c72c41', '#801336', '#510a32', '#2d132c',
+                         '#6a0572', '#ab83a1', '#e7c8dd', '#f39189', '#bb8082',
+                         '#6e5773', '#d5b0ac', '#f1e1a6', '#f19483', '#ffc2a2', '#87aaaa'];
+
+        let tiles = [];
+        let emptyIndex;
+        let moves = 0;
+        let won = false;
+        let level = 1;
+
+        function initBoard() {
+            tiles = [];
+            for (let i = 0; i < COLS * ROWS - 1; i++) {
+                tiles.push(i + 1);
+            }
+            tiles.push(0); // 0 = empty
+            emptyIndex = tiles.length - 1;
+            moves = 0;
+            won = false;
+            shuffle();
+        }
+
+        function shuffle() {
+            // Perform random valid moves to ensure solvability
+            for (let i = 0; i < 200 + level * 50; i++) {
+                const neighbors = getNeighbors(emptyIndex);
+                const pick = neighbors[Math.floor(Math.random() * neighbors.length)];
+                tiles[emptyIndex] = tiles[pick];
+                tiles[pick] = 0;
+                emptyIndex = pick;
+            }
+            moves = 0;
+        }
+
+        function getNeighbors(idx) {
+            const row = Math.floor(idx / COLS);
+            const col = idx % COLS;
+            const n = [];
+            if (row > 0) n.push(idx - COLS);
+            if (row < ROWS - 1) n.push(idx + COLS);
+            if (col > 0) n.push(idx - 1);
+            if (col < COLS - 1) n.push(idx + 1);
+            return n;
+        }
+
+        function checkWin() {
+            for (let i = 0; i < tiles.length - 1; i++) {
+                if (tiles[i] !== i + 1) return false;
+            }
+            return tiles[tiles.length - 1] === 0;
+        }
+
+        canvas.addEventListener('click', e => {
+            const rect = canvas.getBoundingClientRect();
+            const mx = e.clientX - rect.left;
+            const my = e.clientY - rect.top;
+
+            if (won) {
+                level++;
+                initBoard();
+                return;
+            }
+
+            // Find clicked tile
+            for (let i = 0; i < tiles.length; i++) {
+                const col = i % COLS;
+                const row = Math.floor(i / COLS);
+                const tx = BOARD_X + col * (TILE_SIZE + PADDING);
+                const ty = BOARD_Y + row * (TILE_SIZE + PADDING);
+
+                if (mx >= tx && mx <= tx + TILE_SIZE && my >= ty && my <= ty + TILE_SIZE) {
+                    // Can only move if adjacent to empty
+                    const neighbors = getNeighbors(emptyIndex);
+                    if (neighbors.includes(i)) {
+                        tiles[emptyIndex] = tiles[i];
+                        tiles[i] = 0;
+                        emptyIndex = i;
+                        moves++;
+                        if (checkWin()) won = true;
+                    }
+                    break;
+                }
+            }
+        });
+
+        function drawTile(x, y, num) {
+            const colorIndex = (num - 1) % COLORS.length;
+            ctx.fillStyle = COLORS[colorIndex];
+            ctx.beginPath();
+            ctx.roundRect(x, y, TILE_SIZE, TILE_SIZE, 8);
+            ctx.fill();
+
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 28px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(num, x + TILE_SIZE / 2, y + TILE_SIZE / 2);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Title and score
+            ctx.fillStyle = '#e7c8dd';
+            ctx.font = 'bold 20px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('Puzzle Quest - Level ' + level, canvas.width / 2, 30);
+
+            ctx.fillStyle = '#ab83a1';
+            ctx.font = '14px monospace';
+            ctx.fillText('Moves: ' + moves, canvas.width / 2, 50);
+
+            // Board
+            for (let i = 0; i < tiles.length; i++) {
+                if (tiles[i] === 0) continue;
+                const col = i % COLS;
+                const row = Math.floor(i / COLS);
+                const tx = BOARD_X + col * (TILE_SIZE + PADDING);
+                const ty = BOARD_Y + row * (TILE_SIZE + PADDING);
+                drawTile(tx, ty, tiles[i]);
+            }
+
+            if (won) {
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#f1e1a6';
+                ctx.font = 'bold 30px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('Level Complete!', canvas.width / 2, canvas.height / 2 - 20);
+                ctx.font = '16px monospace';
+                ctx.fillStyle = '#e7c8dd';
+                ctx.fillText('Moves: ' + moves, canvas.width / 2, canvas.height / 2 + 15);
+                ctx.fillText('Click to continue', canvas.width / 2, canvas.height / 2 + 45);
+            } else {
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.font = '12px monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('Click a tile adjacent to the empty space', canvas.width / 2, canvas.height - 15);
+            }
+        }
+
+        function loop() {
+            draw();
+            requestAnimationFrame(loop);
+        }
+
+        initBoard();
+        loop();
+    </script>
+</body>
+</html>
