@@ -49,6 +49,8 @@ const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
 const membersRoutes = require('./routes/members');
 app.use('/api/members', membersRoutes);
+const playsRoutes = require('./routes/plays');
+app.use('/api', playsRoutes);
 
 // API: Get games list
 app.get('/api/games', (req, res) => {

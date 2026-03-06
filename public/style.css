@@ -1165,3 +1165,357 @@ a.game-card__author:hover {
     border-color: var(--neon-purple);
     background: rgba(124, 58, 237, 0.1);
 }
+
+/* --- Game Card Plays Count --- */
+.game-card__plays {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   Game Controls - Share Toolbar
+   ========================================================================== */
+
+.game-controls__share {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    position: relative;
+}
+
+.game-controls__share-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.game-controls__share-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.game-controls__share-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    font-family: var(--font-body);
+    font-size: 0.825rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.game-controls__share-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--neon-purple);
+    box-shadow: var(--glow-purple);
+}
+
+.game-controls__share-btn--kakao:hover {
+    border-color: #fee500;
+    color: #fee500;
+    box-shadow: 0 0 16px rgba(254, 229, 0, 0.25);
+}
+
+.game-controls__share-btn--twitter:hover {
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+    box-shadow: var(--glow-cyan);
+}
+
+.game-controls__share-btn--copy:hover {
+    border-color: var(--neon-purple);
+    color: var(--neon-purple);
+    box-shadow: var(--glow-purple);
+}
+
+.game-controls__share-btn svg {
+    flex-shrink: 0;
+}
+
+/* Toast notification */
+.game-controls__toast {
+    position: absolute;
+    right: 1.25rem;
+    top: 50%;
+    transform: translateY(-50%) scale(0.9);
+    padding: 0.4rem 1rem;
+    background: var(--neon-purple);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 6px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.game-controls__toast--visible {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+}
+
+@media (max-width: 640px) {
+    .game-controls__share {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .game-controls__share-buttons {
+        width: 100%;
+    }
+
+    .game-controls__share-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    .game-controls__toast {
+        right: auto;
+        left: 50%;
+        top: auto;
+        bottom: -2rem;
+        transform: translateX(-50%) scale(0.9);
+    }
+
+    .game-controls__toast--visible {
+        transform: translateX(-50%) scale(1);
+    }
+}
+
+/* --- Skill Badges Enhanced --- */
+.skill-badge--enhanced {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    --badge-glow-color: var(--neon-cyan);
+}
+
+.skill-badge__icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.skill-badge--enhanced:hover {
+    border-color: var(--badge-glow-color);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--badge-glow-color) 50%, transparent),
+                0 0 20px color-mix(in srgb, var(--badge-glow-color) 25%, transparent);
+}
+
+/* --- Header About Link --- */
+.header__about-link {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.3rem 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all var(--transition);
+}
+
+.header__about-link:hover {
+    border-color: var(--neon-cyan);
+    color: var(--text-primary);
+    box-shadow: var(--glow-cyan);
+}
+
+/* ==========================================================================
+   About Page
+   ========================================================================== */
+
+.about {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem 0;
+}
+
+.about__hero {
+    text-align: center;
+    padding: 2.5rem 1rem 1.5rem;
+}
+
+.about__hero-title {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.about__hero-subtitle {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+}
+
+/* --- Stats --- */
+.about__stats {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin: 1.5rem 0 2rem;
+}
+
+.about__stat {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 1.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: var(--neon-cyan);
+}
+
+.about__stat-value {
+    font-weight: 700;
+    font-family: var(--font-heading);
+}
+
+.about__stat-label {
+    color: var(--text-secondary);
+}
+
+/* --- Members Grid --- */
+.about__members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1.5rem;
+}
+
+/* --- Member Card --- */
+.about__member-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 2rem 1.5rem 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+    transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+}
+
+.about__member-card:hover {
+    transform: scale(1.03);
+    border-color: var(--neon-purple);
+    box-shadow: var(--glow-purple), 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.about__member-avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2px solid var(--neon-purple);
+    box-shadow: var(--glow-purple);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-surface);
+    margin-bottom: 1rem;
+}
+
+.about__member-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.about__member-avatar-initials {
+    font-family: var(--font-heading);
+    font-size: 1.75rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.about__member-name {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--neon-purple), var(--neon-cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.3rem;
+}
+
+.about__member-role {
+    display: inline-block;
+    padding: 0.15rem 0.7rem;
+    border-radius: 16px;
+    background: rgba(124, 58, 237, 0.15);
+    border: 1px solid var(--neon-purple);
+    color: var(--neon-purple);
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.about__member-bio {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.about__member-link {
+    margin-top: auto;
+    padding-top: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--neon-cyan);
+    transition: color var(--transition);
+}
+
+.about__member-card:hover .about__member-link {
+    color: var(--neon-purple);
+}
+
+/* --- About Responsive --- */
+@media (max-width: 640px) {
+    .about__hero-title {
+        font-size: 1.5rem;
+    }
+
+    .about__members-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .about__stats {
+        flex-direction: column;
+        align-items: center;
+    }
+}

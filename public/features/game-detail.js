@@ -20,7 +20,7 @@
     // 태그 뱃지 삽입
     const tagsEl = document.createElement('div');
     tagsEl.className = 'game-detail__tags';
-    game.tags.forEach(tag => {
+    (game.tags || []).forEach(tag => {
       const badge = document.createElement('a');
       badge.href = 'index.html?tag=' + encodeURIComponent(tag);
       badge.className = 'game-detail__tag';
@@ -36,12 +36,25 @@
     dateEl.textContent = 'Uploaded: ' + game.date;
     const playsEl = document.createElement('span');
     playsEl.className = 'game-detail__plays';
-    playsEl.textContent = game.plays + ' plays';
+    playsEl.textContent = (game.plays || 0) + ' plays';
     metaEl.appendChild(dateEl);
     metaEl.appendChild(playsEl);
 
     // info 영역 끝에 추가
     info.appendChild(tagsEl);
     info.appendChild(metaEl);
+
+    // Fire-and-forget: record play and update count
+    fetch('/api/games/' + encodeURIComponent(game.id) + '/play', {
+      method: 'POST',
+      credentials: 'include',
+    })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (data && typeof data.plays === 'number') {
+          playsEl.textContent = data.plays + ' plays';
+        }
+      })
+      .catch(function () { /* ignore */ });
   });
 })();

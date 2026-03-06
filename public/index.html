@@ -7,8 +7,14 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="게임소모임">
+    <meta property="og:title" content="게임소모임">
+    <meta property="og:description" content="팀원들이 직접 만든 게임을 즐겨보세요">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="stylesheet" href="style.css">
     <script src="app.js" defer></script>
+    <script src="features/og-meta.js" defer></script>
     <script src="features/tag-filter.js" defer></script>
     <script src="features/sort.js" defer></script>
     <script src="features/recent-plays.js" defer></script>
@@ -21,6 +27,7 @@
     <header class="header">
         <h1 class="header__title">게임소모임</h1>
         <p class="header__subtitle">팀원들이 직접 만든 게임을 즐겨보세요</p>
+        <a href="about.html" class="header__about-link">팀 소개</a>
         <nav class="header__nav" id="member-nav" aria-label="팀원 목록">
             <!-- Member links inserted by member-nav.js -->
         </nav>

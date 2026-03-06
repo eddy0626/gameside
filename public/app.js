@@ -65,9 +65,14 @@
       e.stopPropagation();
     });
 
+    var plays = document.createElement('span');
+    plays.className = 'game-card__plays';
+    plays.textContent = (game.plays || 0) + ' plays';
+
     body.appendChild(title);
     body.appendChild(desc);
     body.appendChild(author);
+    body.appendChild(plays);
     card.appendChild(thumb);
     card.appendChild(body);
 
