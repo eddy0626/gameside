@@ -134,6 +134,7 @@
 
   // --- State ---
   let currentUser = null;
+  let matchedMember = null;
   window.gamesideCsrfToken = null;
 
   function readCookie(name) {
@@ -195,10 +196,14 @@
         authContainer.appendChild(avatar);
       }
 
-      // Username
-      const username = document.createElement('span');
+      // Username — prefer matched member name over Google name
+      const username = document.createElement('a');
       username.className = 'auth__username';
-      username.textContent = currentUser.name || currentUser.email || 'User';
+      var displayName = (matchedMember && matchedMember.name) || currentUser.name || currentUser.email || 'User';
+      username.textContent = displayName;
+      username.href = 'portfolio.html?name=' + encodeURIComponent(displayName);
+      username.style.textDecoration = 'none';
+      username.style.color = 'inherit';
       authContainer.appendChild(username);
 
       // Upload Game button
@@ -233,12 +238,30 @@
     }
   }
 
+  // --- Match email to member in members.json ---
+  function matchMember(email) {
+    return fetch('data/members.json')
+      .then(function (res) {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then(function (data) {
+        if (!data) return null;
+        var list = Array.isArray(data) ? data : (data.members || []);
+        return list.find(function (m) {
+          return m.email && m.email.toLowerCase() === email.toLowerCase();
+        }) || null;
+      })
+      .catch(function () { return null; });
+  }
+
   // --- Check auth status ---
   function checkAuth() {
     fetch('/auth/me', { credentials: 'include' })
       .then(function (res) {
         if (res.ok) return res.json();
         currentUser = null;
+        matchedMember = null;
         window.gamesideCsrfToken = null;
         render();
         return null;
@@ -247,11 +270,16 @@
         if (data && data.user) {
           currentUser = data.user;
           window.gamesideCsrfToken = data.csrfToken || getCsrfToken() || null;
-          render();
+          // Match email to member profile
+          return matchMember(currentUser.email).then(function (member) {
+            matchedMember = member;
+            render();
+          });
         }
       })
       .catch(function () {
         currentUser = null;
+        matchedMember = null;
         window.gamesideCsrfToken = null;
         render();
       });

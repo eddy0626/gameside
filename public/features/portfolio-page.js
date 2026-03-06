@@ -100,24 +100,27 @@
     try {
       var res = await fetch(MEMBERS_JSON_PATH);
       if (!res.ok) throw new Error('Failed to load members');
-      members = await res.json();
+      var data = await res.json();
+      members = Array.isArray(data) ? data : (data.members || []);
     } catch (err) {
       showError('Failed to load member data.');
       return;
     }
 
-    var member = members.find(function (m) { return m.name === name; });
+    var member = members.find(function (m) { return m.name === name || m.email === name; });
 
     if (!member) {
       // Show default profile for unknown members
       member = {
         name: name,
         role: '',
-        picture: '',
+        avatar: '',
         tagline: '',
         bio: '',
         skills: [],
-        links: {}
+        github: '',
+        email: '',
+        linkedin: ''
       };
     }
 
@@ -126,10 +129,10 @@
 
     // Avatar
     var avatarEl = document.getElementById('portfolio-avatar');
-    if (member.picture) {
+    if (member.avatar || member.picture) {
       avatarEl.innerHTML = '';
       var img = document.createElement('img');
-      img.src = member.picture;
+      img.src = member.avatar || member.picture;
       img.alt = member.name;
       img.className = 'portfolio__avatar-img';
       avatarEl.appendChild(img);
@@ -179,9 +182,14 @@
       skillsContainer.parentElement.style.display = 'none';
     }
 
-    // Links
+    // Links — support both flat fields and nested links object
     var linksContainer = document.getElementById('portfolio-links');
-    renderLinks(linksContainer, member.links);
+    var linksObj = member.links || {
+      github: member.github || '',
+      email: member.email || '',
+      linkedin: member.linkedin || ''
+    };
+    renderLinks(linksContainer, linksObj);
 
     // Fetch games by this author
     try {

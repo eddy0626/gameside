@@ -71,6 +71,10 @@
         if (!res.ok) return null;
         return res.json();
       })
+      .then(function (data) {
+        if (!data) return null;
+        return Array.isArray(data) ? data : (data.members || []);
+      })
       .catch(function () {
         return null;
       });

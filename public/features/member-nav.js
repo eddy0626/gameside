@@ -20,8 +20,9 @@
         if (!res.ok) throw new Error('No members.json');
         return res.json();
       })
-      .then(function (members) {
-        var names = members.map(function (m) { return m.name; });
+      .then(function (data) {
+        var list = Array.isArray(data) ? data : (data.members || []);
+        var names = list.map(function (m) { return m.name; });
         renderNav(nav, names);
       })
       .catch(function () {
