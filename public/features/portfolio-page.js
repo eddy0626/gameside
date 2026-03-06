@@ -225,6 +225,11 @@
       document.getElementById('portfolio-no-games').style.display = '';
     }
 
+    // External Projects section
+    if (member.projects && member.projects.length > 0) {
+      renderExternalProjects(member.projects);
+    }
+
     // --- Check if this is the logged-in user's own page ---
     try {
       var meRes = await fetch('/auth/me', { credentials: 'include' });
@@ -296,6 +301,39 @@
       '<button type="button" class="portfolio__cancel-btn">취소</button>' +
       '</div>';
 
+    // Projects editing section
+    var projectsSection = document.createElement('div');
+    projectsSection.className = 'portfolio__edit-projects';
+
+    var projectsTitle = document.createElement('label');
+    projectsTitle.className = 'portfolio__edit-label';
+    projectsTitle.textContent = '\uc678\ubd80 \ud504\ub85c\uc81d\ud2b8';
+    projectsSection.appendChild(projectsTitle);
+
+    var projectsList = document.createElement('div');
+    projectsList.className = 'portfolio__edit-projects-list';
+    projectsSection.appendChild(projectsList);
+
+    // Render existing projects
+    var existingProjects = member.projects || [];
+    existingProjects.forEach(function(proj, idx) {
+      projectsList.appendChild(createProjectEditRow(proj, idx));
+    });
+
+    // Add button
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'portfolio__add-project-btn';
+    addBtn.textContent = '+ \ud504\ub85c\uc81d\ud2b8 \ucd94\uac00';
+    addBtn.addEventListener('click', function() {
+      projectsList.appendChild(createProjectEditRow({}, projectsList.children.length));
+    });
+    projectsSection.appendChild(addBtn);
+
+    // Insert before actions div
+    var actionsDiv = form.querySelector('.portfolio__edit-actions');
+    form.insertBefore(projectsSection, actionsDiv);
+
     // Insert form after profile section
     profileSection.parentNode.insertBefore(form, profileSection.nextSibling);
 
@@ -315,6 +353,20 @@
 
       var skills = skillsRaw ? skillsRaw.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
 
+      // Collect projects
+      var projectRows = form.querySelectorAll('.portfolio__edit-project-row');
+      var projects = [];
+      projectRows.forEach(function(row) {
+        var pName = row.querySelector('[name^="project-name"]').value.trim();
+        if (!pName) return; // skip empty entries
+        var pDesc = row.querySelector('[name^="project-desc"]').value.trim();
+        var pUrl = row.querySelector('[name^="project-url"]').value.trim();
+        var pImg = row.querySelector('[name^="project-img"]').value.trim();
+        var pTagsRaw = row.querySelector('[name^="project-tags"]').value.trim();
+        var pTags = pTagsRaw ? pTagsRaw.split(',').map(function(t) { return t.trim(); }).filter(Boolean) : [];
+        projects.push({ name: pName, description: pDesc, url: pUrl, image: pImg, tags: pTags });
+      });
+
       var saveBtn = form.querySelector('.portfolio__save-btn');
       saveBtn.disabled = true;
       saveBtn.textContent = '저장 중...';
@@ -327,7 +379,7 @@
             'Content-Type': 'application/json',
             'X-CSRF-Token': getCsrfToken()
           },
-          body: JSON.stringify({ role: role, bio: bio, skills: skills, github: github, linkedin: linkedin })
+          body: JSON.stringify({ role: role, bio: bio, skills: skills, github: github, linkedin: linkedin, projects: projects })
         });
 
         if (!putRes.ok) {
@@ -388,6 +440,16 @@
           linkedin: linkedin
         });
 
+        // Update projects
+        member.projects = projects;
+        var existingExtSection = document.getElementById('portfolio-ext-projects');
+        if (existingExtSection) {
+          existingExtSection.parentNode.removeChild(existingExtSection);
+        }
+        if (projects.length > 0) {
+          renderExternalProjects(projects);
+        }
+
         // Remove form and show edit button
         form.parentNode.removeChild(form);
         if (editBtn) editBtn.style.display = '';
@@ -397,6 +459,139 @@
         alert('저장 실패: ' + err.message);
       }
     });
+  }
+
+  function renderExternalProjects(projects) {
+    var portfolio = document.getElementById('portfolio');
+
+    var section = document.createElement('section');
+    section.className = 'portfolio__section';
+    section.id = 'portfolio-ext-projects';
+
+    var title = document.createElement('h3');
+    title.className = 'portfolio__section-title';
+    title.textContent = 'External Projects';
+    section.appendChild(title);
+
+    var grid = document.createElement('div');
+    grid.className = 'portfolio__ext-projects';
+
+    projects.forEach(function(project) {
+      var card = document.createElement('a');
+      card.className = 'ext-project-card';
+      card.href = project.url || '#';
+      card.target = '_blank';
+      card.rel = 'noopener noreferrer';
+
+      if (project.image) {
+        var img = document.createElement('img');
+        img.className = 'ext-project-card__image';
+        img.src = project.image;
+        img.alt = project.name;
+        card.appendChild(img);
+      }
+
+      var body = document.createElement('div');
+      body.className = 'ext-project-card__body';
+
+      var name = document.createElement('h4');
+      name.className = 'ext-project-card__name';
+      name.textContent = project.name;
+      body.appendChild(name);
+
+      if (project.description) {
+        var desc = document.createElement('p');
+        desc.className = 'ext-project-card__desc';
+        desc.textContent = project.description;
+        body.appendChild(desc);
+      }
+
+      if (project.tags && project.tags.length > 0) {
+        var tagsDiv = document.createElement('div');
+        tagsDiv.className = 'ext-project-card__tags';
+        project.tags.forEach(function(tag) {
+          var tagEl = document.createElement('span');
+          tagEl.className = 'ext-project-card__tag';
+          tagEl.textContent = tag;
+          tagsDiv.appendChild(tagEl);
+        });
+        body.appendChild(tagsDiv);
+      }
+
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+
+    // Insert before the Links section
+    var linksSection = document.getElementById('portfolio-links');
+    if (linksSection) {
+      portfolio.insertBefore(section, linksSection);
+    } else {
+      portfolio.appendChild(section);
+    }
+  }
+
+  function createProjectEditRow(proj, idx) {
+    var row = document.createElement('div');
+    row.className = 'portfolio__edit-project-row';
+
+    // Project name
+    var nameInput = document.createElement('input');
+    nameInput.className = 'portfolio__edit-input';
+    nameInput.name = 'project-name-' + idx;
+    nameInput.value = proj.name || '';
+    nameInput.placeholder = '\ud504\ub85c\uc81d\ud2b8\uba85';
+    nameInput.maxLength = 100;
+    row.appendChild(nameInput);
+
+    // Description
+    var descInput = document.createElement('input');
+    descInput.className = 'portfolio__edit-input';
+    descInput.name = 'project-desc-' + idx;
+    descInput.value = proj.description || '';
+    descInput.placeholder = '\uc124\uba85';
+    descInput.maxLength = 500;
+    row.appendChild(descInput);
+
+    // URL
+    var urlInput = document.createElement('input');
+    urlInput.className = 'portfolio__edit-input';
+    urlInput.name = 'project-url-' + idx;
+    urlInput.value = proj.url || '';
+    urlInput.placeholder = 'https://...';
+    urlInput.maxLength = 500;
+    row.appendChild(urlInput);
+
+    // Image URL
+    var imgInput = document.createElement('input');
+    imgInput.className = 'portfolio__edit-input';
+    imgInput.name = 'project-img-' + idx;
+    imgInput.value = proj.image || '';
+    imgInput.placeholder = '\uc774\ubbf8\uc9c0 URL (\uc120\ud0dd)';
+    imgInput.maxLength = 500;
+    row.appendChild(imgInput);
+
+    // Tags
+    var tagsInput = document.createElement('input');
+    tagsInput.className = 'portfolio__edit-input';
+    tagsInput.name = 'project-tags-' + idx;
+    tagsInput.value = (proj.tags || []).join(', ');
+    tagsInput.placeholder = '\ud0dc\uadf8 (\ucf64\ub9c8 \uad6c\ubd84)';
+    row.appendChild(tagsInput);
+
+    // Delete button
+    var delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'portfolio__delete-project-btn';
+    delBtn.textContent = '\uc0ad\uc81c';
+    delBtn.addEventListener('click', function() {
+      row.parentNode.removeChild(row);
+    });
+    row.appendChild(delBtn);
+
+    return row;
   }
 
   function escapeAttr(str) {

@@ -55,6 +55,12 @@ const ratingsRoutes = require('./routes/ratings');
 app.use('/api', ratingsRoutes);
 const commentsRoutes = require('./routes/comments');
 app.use('/api', commentsRoutes);
+const activityRoutes = require('./routes/activity');
+app.use('/api', activityRoutes);
+const gamejamRoutes = require('./routes/gamejam');
+app.use('/api', gamejamRoutes);
+const versionsRoutes = require('./routes/versions');
+app.use('/api', versionsRoutes);
 
 // API: Get games list
 app.get('/api/games', (req, res) => {

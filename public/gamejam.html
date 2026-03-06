@@ -3,52 +3,36 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>팀 소개 - 게임소모임</title>
+    <title>게임잼 - 게임소모임</title>
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="게임소모임">
-    <meta property="og:title" content="팀 소개 - 게임소모임">
-    <meta property="og:description" content="게임 개발을 즐기는 팀원들의 공간입니다">
+    <meta property="og:title" content="게임잼 - 게임소모임">
+    <meta property="og:description" content="제한된 시간 안에 주어진 테마로 게임을 만들어보세요">
     <meta name="twitter:card" content="summary">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap">
     <link rel="stylesheet" href="style.css">
     <script src="app.js" defer></script>
-    <script src="features/about-page.js" defer></script>
+    <script src="features/gamejam-page.js" defer></script>
     <script src="features/auth-ui.js" defer></script>
     <script src="features/member-nav.js" defer></script>
-    <script src="features/activity-feed.js" defer></script>
 </head>
 <body>
     <header class="header">
         <a href="index.html" class="header__back-link">&larr; 갤러리로</a>
         <h1 class="header__title">게임소모임</h1>
-        <a href="gamejam.html" class="header__about-link">게임잼</a>
     </header>
 
     <main>
-        <section class="about" id="about">
-            <!-- Hero -->
-            <div class="about__hero">
-                <h2 class="about__hero-title">게임소모임 팀 소개</h2>
-                <p class="about__hero-subtitle">게임 개발을 즐기는 팀원들의 공간입니다</p>
+        <section class="gamejam" id="gamejam">
+            <div class="gamejam__hero">
+                <h2 class="gamejam__hero-title">게임잼</h2>
+                <p class="gamejam__hero-subtitle">제한된 시간 안에 주어진 테마로 게임을 만들어보세요</p>
             </div>
-
-            <!-- Stats -->
-            <div class="about__stats" id="about-stats">
-                <div class="about__stat">
-                    <span class="about__stat-value" id="about-game-count">-</span>
-                    <span class="about__stat-label">개의 게임</span>
-                </div>
-                <div class="about__stat">
-                    <span class="about__stat-value" id="about-member-count">-</span>
-                    <span class="about__stat-label">명의 팀원</span>
-                </div>
-            </div>
-
-            <!-- Member Cards Grid -->
-            <div class="about__members-grid" id="about-members">
-                <!-- Populated by about-page.js -->
+            <button class="gamejam__create-btn" id="gamejam-create-btn" style="display:none;">게임잼 만들기</button>
+            <div class="gamejam__list" id="gamejam-list">
+                <!-- Populated by JS -->
             </div>
         </section>
     </main>

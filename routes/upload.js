@@ -195,6 +195,83 @@ function safeExtractZip(zipPath, targetDir) {
   }
 }
 
+function copyDirSync(src, dest) {
+  fs.mkdirSync(dest, { recursive: true });
+  var entries = fs.readdirSync(src, { withFileTypes: true });
+  for (var entry of entries) {
+    var srcPath = path.join(src, entry.name);
+    var destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyDirSync(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
+
+function handleVersionUpdate(existingGame, gamesIndex, gameFile, thumbnailFile, title, description, author, tags, devNote, coAuthors) {
+  var id = existingGame.id;
+  var gameDir = path.join(GAMES_DIR, id);
+  var gameExt = path.extname(gameFile.originalname).toLowerCase();
+  var thumbExt = path.extname(thumbnailFile.originalname).toLowerCase();
+
+  if (!existingGame.versions) {
+    existingGame.versions = [];
+  }
+
+  var currentVersion = existingGame.currentVersion || 1;
+  var nextVersion = currentVersion + 1;
+
+  var versionDir = path.join(GAMES_DIR, id + '-v' + currentVersion);
+  if (!fs.existsSync(versionDir)) {
+    copyDirSync(gameDir, versionDir);
+  }
+
+  existingGame.versions.push({
+    version: currentVersion,
+    folder: id + '-v' + currentVersion,
+    date: existingGame.date,
+    description: existingGame.description,
+    author: existingGame.author,
+  });
+
+  fs.rmSync(gameDir, { recursive: true, force: true });
+  fs.mkdirSync(gameDir, { recursive: true });
+
+  if (gameExt === '.zip') {
+    safeExtractZip(gameFile.path, gameDir);
+  } else {
+    fs.copyFileSync(gameFile.path, path.join(gameDir, 'index.html'));
+  }
+
+  if (!fs.existsSync(path.join(gameDir, 'index.html'))) {
+    throw new RequestError(400, 'Game must contain an index.html file.');
+  }
+
+  var thumbnailName = 'thumbnail' + thumbExt;
+  fs.copyFileSync(thumbnailFile.path, path.join(gameDir, thumbnailName));
+
+  existingGame.title = title.trim();
+  existingGame.thumbnail = 'games/' + id + '/' + thumbnailName;
+  existingGame.description = description ? description.trim() : existingGame.description;
+  existingGame.author = author ? author.trim() : existingGame.author;
+  existingGame.date = new Date().toISOString();
+  existingGame.currentVersion = nextVersion;
+
+  if (tags) {
+    existingGame.tags = tags.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+  }
+  if (devNote) {
+    existingGame.devNote = devNote;
+  }
+  if (coAuthors && coAuthors.length > 0) {
+    existingGame.coAuthors = coAuthors;
+  }
+
+  writeGamesIndexAtomic(gamesIndex);
+  return existingGame;
+}
+
 function processUpload(gameFile, thumbnailFile, title, description, author, tags, devNote, coAuthors) {
   const gameExt = path.extname(gameFile.originalname).toLowerCase();
   const thumbExt = path.extname(thumbnailFile.originalname).toLowerCase();
@@ -207,8 +284,10 @@ function processUpload(gameFile, thumbnailFile, title, description, author, tags
   return withIndexLock(() => {
     const gamesIndex = readGamesIndex();
 
-    if (gamesIndex.some((game) => game.id === id)) {
-      throw new RequestError(409, `A game with ID "${id}" already exists.`);
+    const existingGame = gamesIndex.find((game) => game.id === id);
+
+    if (existingGame) {
+      return handleVersionUpdate(existingGame, gamesIndex, gameFile, thumbnailFile, title, description, author, tags, devNote, coAuthors);
     }
 
     const gameDir = path.join(GAMES_DIR, id);
@@ -327,6 +406,10 @@ router.post('/games', requireAuth, requireCsrf, (req, res) => {
       }
 
       const game = await processUpload(gameFile, thumbnailFile, title, description, author, tags, devNote, coAuthors);
+      try {
+        const { addActivity } = require('../lib/activity');
+        addActivity('game_uploaded', { name: req.user.name || 'Unknown', email: req.user.email || '' }, { gameTitle: game.title, gameId: game.id });
+      } catch (_) { /* don't fail upload if activity logging fails */ }
       res.status(201).json({ message: 'Game uploaded successfully.', game });
     } catch (error) {
       if (error instanceof RequestError) {
@@ -359,3 +442,4 @@ function cleanupFiles(files) {
 }
 
 module.exports = router;
+module.exports.copyDirSync = copyDirSync;

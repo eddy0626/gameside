@@ -76,6 +76,14 @@ router.post('/games/:id/comments', requireAuth, requireCsrf, function (req, res)
     allComments[gameId] = gameComments;
     writeCommentsAtomic(allComments);
 
+    try {
+      var { addActivity } = require('../lib/activity');
+      var { readGamesIndex } = require('../lib/games');
+      var games = readGamesIndex();
+      var foundGame = games.find(function (g) { return g.id === gameId; });
+      addActivity('comment_added', { name: req.user.name || 'Unknown', email: req.user.email || '' }, { gameTitle: foundGame ? foundGame.title : gameId, gameId: gameId });
+    } catch (_) {}
+
     var sorted = gameComments.slice().sort(function (a, b) {
       return new Date(b.timestamp) - new Date(a.timestamp);
     });

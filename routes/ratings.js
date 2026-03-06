@@ -85,6 +85,14 @@ router.post('/games/:id/ratings', requireAuth, requireCsrf, function (req, res) 
     allRatings[gameId] = gameRatings;
     writeRatingsAtomic(allRatings);
 
+    try {
+      const { addActivity } = require('../lib/activity');
+      const { readGamesIndex } = require('../lib/games');
+      var games = readGamesIndex();
+      var game = games.find(function (g) { return g.id === gameId; });
+      addActivity('rating_added', { name: req.user.name || 'Unknown', email: req.user.email || '' }, { gameTitle: game ? game.title : gameId, gameId: gameId, rating: rating });
+    } catch (_) {}
+
     res.json(computeStats(gameRatings));
   } catch (error) {
     console.error('Failed to save rating:', error.message);
