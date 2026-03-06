@@ -1,6 +1,7 @@
 const request = require('supertest');
 const jwt = require('jsonwebtoken');
 const {
+  TEST_CSRF,
   TEST_SECRET,
   generateToken,
   generateExpiredToken,
@@ -34,6 +35,7 @@ describe('GET /auth/me', () => {
       .set('Cookie', `token=${token}`);
     expect(res.status).toBe(200);
     expect(res.body.user).toBeDefined();
+    expect(res.body.csrfToken).toBeDefined();
     expect(res.body.user.email).toBe('test@example.com');
     expect(res.body.user.name).toBe('Test User');
   });
@@ -75,7 +77,8 @@ describe('POST /auth/logout', () => {
     const token = generateToken();
     const res = await request(app)
       .post('/auth/logout')
-      .set('Cookie', `token=${token}`);
+      .set('Cookie', [`token=${token}`, `csrf_token=${TEST_CSRF}`])
+      .set('X-CSRF-Token', TEST_CSRF);
     expect(res.status).toBe(200);
     expect(res.body.message).toBe('Logged out');
     // Verify Set-Cookie header clears the token

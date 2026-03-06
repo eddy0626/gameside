@@ -219,6 +219,15 @@
     return node;
   }
 
+  function readCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
+  function getCsrfToken() {
+    return window.gamesideCsrfToken || readCookie('csrf_token');
+  }
+
   // ---------------------------------------------------------------------------
   // Build modal DOM
   // ---------------------------------------------------------------------------
@@ -421,6 +430,8 @@
 
         if (xhr.status === 401) {
           showError(errorBox, '\ub85c\uadf8\uc778 \ud544\uc694');
+        } else if (xhr.status === 403) {
+          showError(errorBox, 'Security check failed. Refresh and try again.');
         } else if (xhr.status === 413) {
           showError(errorBox, '\ud30c\uc77c \ud06c\uae30 \ucd08\uacfc');
         } else {
@@ -443,6 +454,7 @@
 
       xhr.open('POST', '/api/games');
       xhr.withCredentials = true;
+      xhr.setRequestHeader('X-CSRF-Token', getCsrfToken());
       xhr.send(formData);
     });
 

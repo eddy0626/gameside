@@ -22,7 +22,7 @@ OAuth callback. Google redirects here after user consents.
 
 **Access:** Public (called by Google)
 
-**Success:** Redirects to `/?login=success` and sets an `httpOnly` cookie named `token` (JWT, HS256, 24h expiry).
+**Success:** Redirects to `/?login=success` and sets an `httpOnly` cookie named `token` (JWT, HS256, 24h expiry) plus a CSRF cookie used by the frontend for unsafe requests.
 
 **Failure:** Redirects to `/?login=failed` if email is not in the allowed list, or `/?login=csrf_error` if state mismatch.
 
@@ -54,7 +54,8 @@ Authorization: Bearer <jwt>
     "picture": "https://...",
     "iat": 1741139200,
     "exp": 1741225600
-  }
+  },
+  "csrfToken": "random-csrf-token"
 }
 ```
 
@@ -70,6 +71,8 @@ Authorization: Bearer <jwt>
 Clears the authentication cookie.
 
 **Access:** Public
+
+**Cookie-authenticated requests:** send `X-CSRF-Token` matching the `csrf_token` cookie.
 
 **Response (200):**
 ```json
@@ -94,6 +97,8 @@ Returns the list of all games.
     "title": "Sample Platformer",
     "folder": "sample-game",
     "thumbnail": "games/sample-game/thumbnail.svg",
+    "thumbnailUrl": "http://127.0.0.1:3001/games/sample-game/thumbnail.svg",
+    "playUrl": "http://127.0.0.1:3001/games/sample-game/index.html",
     "description": "A simple HTML5 canvas platformer game.",
     "author": "Team",
     "tags": ["platformer", "action"],
@@ -124,7 +129,7 @@ Upload a new game.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `gameFile` | File | Yes | Game file (.zip or .html, max 50MB) |
-| `thumbnail` | File | Yes | Thumbnail image (.png, .jpg, .svg) |
+| `thumbnail` | File | Yes | Thumbnail image (.png, .jpg) |
 | `title` | String | Yes | Game title (used to generate slug ID) |
 | `description` | String | No | Game description |
 | `author` | String | No | Author name (default: "Anonymous") |
@@ -134,6 +139,7 @@ Upload a new game.
 - Game file: `.zip` (PK header), `.html` (DOCTYPE/html tag)
 - Thumbnail: `.png` (PNG header), `.jpg`/`.jpeg` (JPEG header)
 - Note: SVG uploads are blocked to prevent XSS
+- Cookie-authenticated uploads must send `X-CSRF-Token` matching the `csrf_token` cookie
 
 **Success Response (201):**
 ```json
@@ -167,6 +173,8 @@ Upload a new game.
 | 401 | `"Invalid or expired token"` | Bad or expired JWT |
 | 409 | `"A game with ID \"...\" already exists."` | Duplicate game slug |
 | 413 | `"File too large. Maximum size is 50MB."` | File exceeds size limit |
+| 400 | `"ZIP must contain an index.html file..."` | ZIP missing a playable entry point |
+| 403 | `"Invalid CSRF token"` | Missing or invalid CSRF token for cookie auth |
 | 500 | `"Failed to process upload."` | Server-side processing error |
 
 **Upload behavior:**
@@ -187,6 +195,8 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ALLOWED_EMAILS=user1@gmail.com,user2@gmail.com
 JWT_SECRET=a-long-random-secret-string
 PORT=3000
+GAMES_PORT=3001
+GAMES_PUBLIC_ORIGIN=http://127.0.0.1:3001
 ```
 
 | Variable | Description |
@@ -196,6 +206,8 @@ PORT=3000
 | `ALLOWED_EMAILS` | Comma-separated list of allowed team member emails |
 | `JWT_SECRET` | Secret key for signing JWT tokens |
 | `PORT` | Server port (default: 3000) |
+| `GAMES_PORT` | Port used by the isolated static server for uploaded games |
+| `GAMES_PUBLIC_ORIGIN` | Public origin used for thumbnails and playable game URLs |
 
 ---
 
@@ -207,7 +219,7 @@ npm start        # Production
 npm run dev      # Development (auto-restart on changes)
 ```
 
-The server serves the API and static frontend files from `public/` directory. Game assets are served from `games/`. Server source code is never exposed.
+The main server serves the API and static frontend files from `public/`. Uploaded games are served from a separate origin so they do not share credentials with the app.
 
 ## Project Structure
 

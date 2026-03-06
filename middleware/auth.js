@@ -1,19 +1,26 @@
 const jwt = require('jsonwebtoken');
 
-const requireAuth = (req, res, next) => {
-  let token = null;
+const CSRF_COOKIE_NAME = 'csrf_token';
 
-  // Check cookie first
-  if (req.cookies && req.cookies.token) {
-    token = req.cookies.token;
+function getBearerToken(req) {
+  if (!req.headers.authorization) {
+    return null;
   }
 
-  // Fall back to Authorization header
-  if (!token && req.headers.authorization) {
-    const parts = req.headers.authorization.split(' ');
-    if (parts.length === 2 && parts[0] === 'Bearer') {
-      token = parts[1];
-    }
+  const parts = req.headers.authorization.split(' ');
+  if (parts.length === 2 && parts[0] === 'Bearer') {
+    return parts[1];
+  }
+
+  return null;
+}
+
+const requireAuth = (req, res, next) => {
+  // Prefer an explicit Authorization header over ambient cookies.
+  let token = getBearerToken(req);
+
+  if (!token && req.cookies && req.cookies.token) {
+    token = req.cookies.token;
   }
 
   if (!token) {
@@ -29,4 +36,24 @@ const requireAuth = (req, res, next) => {
   }
 };
 
-module.exports = { requireAuth };
+const requireCsrf = (req, res, next) => {
+  if (getBearerToken(req)) {
+    return next();
+  }
+
+  const hasTokenCookie = Boolean(req.cookies && req.cookies.token);
+  if (!hasTokenCookie) {
+    return next();
+  }
+
+  const csrfCookie = req.cookies && req.cookies[CSRF_COOKIE_NAME];
+  const csrfHeader = req.get('X-CSRF-Token');
+
+  if (!csrfCookie || !csrfHeader || csrfCookie !== csrfHeader) {
+    return res.status(403).json({ error: 'Invalid CSRF token' });
+  }
+
+  next();
+};
+
+module.exports = { CSRF_COOKIE_NAME, requireAuth, requireCsrf };

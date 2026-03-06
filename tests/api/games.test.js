@@ -11,6 +11,7 @@ const {
   ensureUploadsTmp,
   createTestPng,
   createTestZip,
+  createTestZipWithRootDir,
   createTestZipNoIndex,
 } = require('../helpers/setup');
 
@@ -39,6 +40,8 @@ describe('GET /api/games', () => {
     expect(game).toHaveProperty('date');
     expect(game).toHaveProperty('plays');
     expect(game).toHaveProperty('featured');
+    expect(game).toHaveProperty('thumbnailUrl');
+    expect(game).toHaveProperty('playUrl');
   });
 });
 
@@ -56,7 +59,7 @@ describe('POST /api/games - Authentication', () => {
   it('should reject with invalid token', async () => {
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', 'token=invalid.jwt.token')
+      .set('Authorization', 'Bearer invalid.jwt.token')
       .field('title', 'Test');
     expect(res.status).toBe(401);
   });
@@ -65,7 +68,7 @@ describe('POST /api/games - Authentication', () => {
     const token = generateExpiredToken();
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'Test');
     expect(res.status).toBe(401);
   });
@@ -94,7 +97,7 @@ describe('POST /api/games - Upload Success', () => {
 
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'E2E Test HTML Game')
       .field('description', 'A test game for E2E')
       .field('author', 'Tester')
@@ -116,7 +119,7 @@ describe('POST /api/games - Upload Success', () => {
 
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'E2E Test ZIP Game')
       .field('description', 'ZIP game test')
       .field('author', 'Tester')
@@ -132,13 +135,31 @@ describe('POST /api/games - Upload Success', () => {
     expect(fs.existsSync(indexPath)).toBe(true);
   });
 
+  it('should accept a ZIP with a single root folder', async () => {
+    const token = generateToken();
+
+    const res = await request(app)
+      .post('/api/games')
+      .set('Authorization', `Bearer ${token}`)
+      .field('title', 'E2E Root Folder ZIP Game')
+      .attach('gameFile', createTestZipWithRootDir(), 'game.zip')
+      .attach('thumbnail', createTestPng(), 'thumb.png');
+
+    expect(res.status).toBe(201);
+    expect(res.body.game.id).toBe('e2e-root-folder-zip-game');
+    testGameIds.push(res.body.game.id);
+
+    const indexPath = path.join(__dirname, '..', '..', 'games', 'e2e-root-folder-zip-game', 'index.html');
+    expect(fs.existsSync(indexPath)).toBe(true);
+  });
+
   it('should reject duplicate game ID', async () => {
     const token = generateToken();
     const htmlContent = '<!DOCTYPE html><html><body>Dup</body></html>';
 
     const res1 = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'Duplicate Test Game')
       .attach('gameFile', Buffer.from(htmlContent), 'game.html')
       .attach('thumbnail', createTestPng(), 'thumb.png');
@@ -147,7 +168,7 @@ describe('POST /api/games - Upload Success', () => {
 
     const res2 = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'Duplicate Test Game')
       .attach('gameFile', Buffer.from(htmlContent), 'game.html')
       .attach('thumbnail', createTestPng(), 'thumb.png');
@@ -178,7 +199,7 @@ describe('POST /api/games - Validation', () => {
   it('should reject missing title', async () => {
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .attach('gameFile', Buffer.from('<html></html>'), 'game.html')
       .attach('thumbnail', createTestPng(), 'thumb.png');
     expect(res.status).toBe(400);
@@ -188,7 +209,7 @@ describe('POST /api/games - Validation', () => {
   it('should reject missing game file', async () => {
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'No File Game')
       .attach('thumbnail', createTestPng(), 'thumb.png');
     expect(res.status).toBe(400);
@@ -198,7 +219,7 @@ describe('POST /api/games - Validation', () => {
   it('should reject missing thumbnail', async () => {
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'No Thumb Game')
       .attach('gameFile', Buffer.from('<html></html>'), 'game.html');
     expect(res.status).toBe(400);
@@ -208,7 +229,7 @@ describe('POST /api/games - Validation', () => {
   it('should reject wrong file type', async () => {
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'Wrong Type Game')
       .attach('gameFile', Buffer.from('binary content'), 'game.exe')
       .attach('thumbnail', createTestPng(), 'thumb.png');
@@ -219,7 +240,7 @@ describe('POST /api/games - Validation', () => {
     // File named .png but contains plain text (no PNG magic bytes)
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'Bad Magic Game')
       .attach('gameFile', Buffer.from('<html></html>'), 'game.html')
       .attach('thumbnail', Buffer.from('not a real png file at all'), 'thumb.png');
@@ -230,11 +251,11 @@ describe('POST /api/games - Validation', () => {
   it('should reject ZIP without index.html', async () => {
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'No Index ZIP Game')
       .attach('gameFile', createTestZipNoIndex(), 'game.zip')
       .attach('thumbnail', createTestPng(), 'thumb.png');
-    // safeExtractZip throws → caught by outer try/catch → 500
-    expect(res.status).toBe(500);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/index\\.html/i);
   });
 });

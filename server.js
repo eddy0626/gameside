@@ -4,14 +4,33 @@ dotenv.config();
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const passport = require('passport');
 const path = require('path');
-const fs = require('fs');
+
+const {
+  GAMES_DIR,
+  decorateGameForResponse,
+  getGamesPort,
+  readGamesIndex,
+} = require('./lib/games');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const gamesApp = express();
+const PORT = Number.parseInt(process.env.PORT, 10) || 3000;
+const GAMES_PORT = getGamesPort(PORT);
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (PORT === GAMES_PORT) {
+  throw new Error('GAMES_PORT must be different from PORT.');
+}
+
+if (isProduction && !process.env.GAMES_PUBLIC_ORIGIN) {
+  throw new Error('GAMES_PUBLIC_ORIGIN must be set in production.');
+}
 
 // Trust proxy (Railway, Heroku, etc. terminate SSL at the proxy)
 app.set('trust proxy', true);
+gamesApp.set('trust proxy', true);
 
 // Middleware
 app.use(cors({
@@ -20,6 +39,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(passport.initialize());
 
 // --- Route mounting ---
 const uploadRoutes = require('./routes/upload');
@@ -29,17 +49,17 @@ app.use('/auth', authRoutes);
 
 // API: Get games list
 app.get('/api/games', (req, res) => {
-  const gamesPath = path.join(__dirname, 'games', 'index.json');
-  fs.readFile(gamesPath, 'utf-8', (err, data) => {
-    if (err) {
-      return res.status(500).json({ error: 'Failed to load games list' });
-    }
-    res.json(JSON.parse(data));
-  });
+  try {
+    const games = readGamesIndex();
+    res.json(games.map((game) => decorateGameForResponse(game, req, GAMES_PORT)));
+  } catch (error) {
+    console.error('Failed to load games list:', error.message);
+    res.status(500).json({ error: 'Failed to load games list' });
+  }
 });
 
 // Unity WebGL Brotli/Gzip compressed files — must be served with correct headers
-app.use('/games', (req, res, next) => {
+gamesApp.use('/games', (req, res, next) => {
   if (req.path.endsWith('.br')) {
     res.set('Content-Encoding', 'br');
     if (req.path.endsWith('.js.br')) res.set('Content-Type', 'application/javascript');
@@ -54,15 +74,19 @@ app.use('/games', (req, res, next) => {
   next();
 });
 
-// Static files: only public/ and games/ are served (source code is NOT exposed)
+// Static files: the main app serves public/, while uploaded games are isolated.
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/games', express.static(path.join(__dirname, 'games')));
+gamesApp.use('/games', express.static(GAMES_DIR));
 
 // Start server (only when run directly, not when imported for tests)
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`GameSide server running on http://localhost:${PORT}`);
   });
+  gamesApp.listen(GAMES_PORT, () => {
+    console.log(`GameSide assets running on http://127.0.0.1:${GAMES_PORT}/games`);
+  });
 }
 
 module.exports = app;
+module.exports.gamesApp = gamesApp;

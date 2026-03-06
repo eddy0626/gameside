@@ -134,6 +134,16 @@
 
   // --- State ---
   let currentUser = null;
+  window.gamesideCsrfToken = null;
+
+  function readCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : '';
+  }
+
+  function getCsrfToken() {
+    return window.gamesideCsrfToken || readCookie('csrf_token');
+  }
 
   // --- DOM refs ---
   const header = document.querySelector('.header');
@@ -229,26 +239,37 @@
       .then(function (res) {
         if (res.ok) return res.json();
         currentUser = null;
+        window.gamesideCsrfToken = null;
         render();
         return null;
       })
       .then(function (data) {
         if (data && data.user) {
           currentUser = data.user;
+          window.gamesideCsrfToken = data.csrfToken || getCsrfToken() || null;
           render();
         }
       })
       .catch(function () {
         currentUser = null;
+        window.gamesideCsrfToken = null;
         render();
       });
   }
 
   // --- Logout ---
   function handleLogout() {
-    fetch('/auth/logout', { method: 'POST', credentials: 'include' })
-      .then(function () {
+    fetch('/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'X-CSRF-Token': getCsrfToken() }
+    })
+      .then(function (res) {
+        if (!res.ok) {
+          throw new Error('Logout failed');
+        }
         currentUser = null;
+        window.gamesideCsrfToken = null;
         render();
         showToast('Logged out successfully', 'success');
       })

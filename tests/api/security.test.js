@@ -51,7 +51,7 @@ describe('Auth enforcement', () => {
     );
     const res = await request(app)
       .post('/api/games')
-      .set('Cookie', `token=${token}`)
+      .set('Authorization', `Bearer ${token}`)
       .field('title', 'Hacked Upload');
     expect(res.status).toBe(401);
   });

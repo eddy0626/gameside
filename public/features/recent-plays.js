@@ -56,7 +56,7 @@
       card.className = 'recent-plays__card';
 
       const img = document.createElement('img');
-      img.src = game.thumbnail;
+      img.src = game.thumbnailUrl || game.thumbnail;
       img.alt = game.title;
       img.className = 'recent-plays__thumb';
 

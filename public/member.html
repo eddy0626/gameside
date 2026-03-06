@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Showcase - Member</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap">
+    <link rel="stylesheet" href="style.css">
+    <script src="features/member-page.js" defer></script>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" class="header__back-link">&larr; Back to Gallery</a>
+        <h1 class="header__title">게임소모임</h1>
+    </header>
+
+    <main>
+        <section class="member-profile" id="member-profile">
+            <div class="member-profile__avatar" id="member-avatar"></div>
+            <h2 class="member-profile__name" id="member-name"></h2>
+            <p class="member-profile__bio" id="member-bio"></p>
+            <div class="member-profile__stats" id="member-stats"></div>
+        </section>
+
+        <section class="member-games">
+            <h3 class="member-games__heading" id="member-games-heading"></h3>
+            <div id="tag-filter-container" class="tag-filter"></div>
+            <div id="game-container">
+                <div class="gallery-grid">
+                    <!-- Game cards inserted by member-page.js -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Game Showcase. All rights reserved.</p>
+    </footer>
+</body>
+</html>

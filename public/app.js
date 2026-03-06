@@ -15,6 +15,14 @@
     return cachedGames;
   }
 
+  function getThumbnailSrc(game) {
+    return game.thumbnailUrl || game.thumbnail;
+  }
+
+  function getPlayUrl(game) {
+    return game.playUrl || `games/${game.folder}/index.html`;
+  }
+
   function debounce(fn, delay) {
     let timer;
     return function () {
@@ -34,7 +42,7 @@
     card.dataset.title = game.title.toLowerCase();
 
     const thumb = document.createElement('img');
-    thumb.src = game.thumbnail;
+    thumb.src = getThumbnailSrc(game);
     thumb.alt = game.title;
     thumb.className = 'game-card__thumbnail';
 
@@ -49,9 +57,13 @@
     desc.className = 'game-card__description';
     desc.textContent = game.description;
 
-    const author = document.createElement('span');
+    const author = document.createElement('a');
     author.className = 'game-card__author';
     author.textContent = game.author;
+    author.href = 'portfolio.html?name=' + encodeURIComponent(game.author);
+    author.addEventListener('click', function (e) {
+      e.stopPropagation();
+    });
 
     body.appendChild(title);
     body.appendChild(desc);
@@ -125,7 +137,7 @@
 
     // Set iframe source
     const iframe = player.querySelector('.game-player__iframe');
-    iframe.src = `games/${game.folder}/index.html`;
+    iframe.src = getPlayUrl(game);
 
     // Populate game info
     player.querySelector('.game-player__title').textContent = game.title;
@@ -258,7 +270,7 @@
         item.dataset.index = i;
 
         const icon = document.createElement('img');
-        icon.src = game.thumbnail;
+        icon.src = getThumbnailSrc(game);
         icon.alt = '';
         icon.className = 'cmdk__item-icon';
 

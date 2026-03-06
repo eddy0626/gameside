@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio - Game Showcase</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap">
+    <link rel="stylesheet" href="style.css">
+    <script src="app.js" defer></script>
+    <script src="features/portfolio-page.js" defer></script>
+</head>
+<body>
+    <header class="header">
+        <a href="index.html" class="header__back-link">&larr; Back to Gallery</a>
+        <h1 class="header__title">게임소모임</h1>
+    </header>
+
+    <main>
+        <div class="portfolio" id="portfolio">
+            <!-- Profile Section -->
+            <div class="portfolio__profile">
+                <div class="portfolio__avatar" id="portfolio-avatar">
+                    <svg class="portfolio__avatar-placeholder" viewBox="0 0 80 80" fill="none">
+                        <circle cx="40" cy="30" r="14" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 68c0-15.464 12.536-28 28-28s28 12.536 28 28" stroke="currentColor" stroke-width="2"/>
+                    </svg>
+                </div>
+                <h2 class="portfolio__name" id="portfolio-name"></h2>
+                <span class="portfolio__role" id="portfolio-role"></span>
+                <p class="portfolio__tagline" id="portfolio-tagline"></p>
+            </div>
+
+            <!-- Bio Section -->
+            <section class="portfolio__section">
+                <h3 class="portfolio__section-title">About</h3>
+                <p class="portfolio__bio" id="portfolio-bio"></p>
+            </section>
+
+            <!-- Skills Section -->
+            <section class="portfolio__section">
+                <h3 class="portfolio__section-title">Skills</h3>
+                <div class="portfolio__skills" id="portfolio-skills"></div>
+            </section>
+
+            <!-- Games Section -->
+            <section class="portfolio__section">
+                <h3 class="portfolio__section-title">Games</h3>
+                <div class="portfolio__games gallery-grid" id="portfolio-games">
+                    <!-- Populated by portfolio-page.js -->
+                </div>
+                <p class="portfolio__no-games" id="portfolio-no-games" style="display:none;">No games found.</p>
+            </section>
+
+            <!-- Links Section -->
+            <div class="portfolio__links" id="portfolio-links"></div>
+        </div>
+    </main>
+
+    <!-- Command Palette (Ctrl+K / Cmd+K) -->
+    <div class="cmdk-overlay" id="cmdk-overlay">
+        <div class="cmdk" role="dialog" aria-modal="true" aria-label="Command palette">
+            <div class="cmdk__header">
+                <svg class="cmdk__search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" class="cmdk__input" id="cmdk-input" placeholder="Search games..." autocomplete="off" aria-label="Search games in command palette">
+                <kbd class="cmdk__kbd">ESC</kbd>
+            </div>
+            <div class="cmdk__list" id="cmdk-list">
+                <!-- Items rendered by app.js -->
+            </div>
+            <div class="cmdk__footer">
+                <span><kbd>&uarr;</kbd><kbd>&darr;</kbd> Navigate</span>
+                <span><kbd>Enter</kbd> Open</span>
+                <span><kbd>Esc</kbd> Close</span>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 Game Showcase. All rights reserved.</p>
+    </footer>
+</body>
+</html>

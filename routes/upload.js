@@ -4,11 +4,22 @@ const path = require('path');
 const fs = require('fs');
 const AdmZip = require('adm-zip');
 
+const { requireAuth, requireCsrf } = require('../middleware/auth');
+const { GAMES_DIR, readGamesIndex, writeGamesIndexAtomic } = require('../lib/games');
+
 const router = express.Router();
+const UPLOADS_TMP_DIR = path.join(__dirname, '..', 'uploads_tmp');
 
-const { requireAuth } = require('../middleware/auth');
+fs.mkdirSync(UPLOADS_TMP_DIR, { recursive: true });
 
-// --- Magic bytes validation (HIGH-9: don't trust client MIME) ---
+class RequestError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+  }
+}
+
+// Magic bytes validation helps reject obviously mislabeled uploads.
 function validateMagicBytes(filePath, ext) {
   const buf = Buffer.alloc(8);
   const fd = fs.openSync(filePath, 'r');
@@ -18,7 +29,7 @@ function validateMagicBytes(filePath, ext) {
   if (bytesRead < 2) return false;
 
   if (ext === '.zip') {
-    return buf[0] === 0x50 && buf[1] === 0x4B; // PK
+    return buf[0] === 0x50 && buf[1] === 0x4B;
   }
   if (ext === '.png') {
     return buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4E && buf[3] === 0x47;
@@ -33,20 +44,20 @@ function validateMagicBytes(filePath, ext) {
   return false;
 }
 
-// --- File lock for index.json (HIGH-8: race condition) ---
 let indexLock = Promise.resolve();
 
 function withIndexLock(fn) {
   let release;
   const prev = indexLock;
-  indexLock = new Promise((r) => { release = r; });
+  indexLock = new Promise((resolve) => {
+    release = resolve;
+  });
   return prev.then(fn).finally(release);
 }
 
-// Multer storage: store uploads in a temp directory
 const upload = multer({
-  dest: path.join(__dirname, '..', 'uploads_tmp'),
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  dest: UPLOADS_TMP_DIR,
+  limits: { fileSize: 50 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.fieldname === 'gameFile') {
       const allowedExt = ['.zip', '.html'];
@@ -58,7 +69,6 @@ const upload = multer({
     }
 
     if (file.fieldname === 'thumbnail') {
-      // HIGH-7: SVG removed — XSS risk
       const allowedExt = ['.png', '.jpg', '.jpeg'];
       const ext = path.extname(file.originalname).toLowerCase();
       if (allowedExt.includes(ext)) {
@@ -86,164 +96,218 @@ function slugify(text) {
     .replace(/^-|-$/g, '');
 }
 
-// CRIT-2: Zip Slip defense — validate all entry paths before extraction
+function normalizeZipEntryName(name) {
+  return String(name || '')
+    .replace(/\\/g, '/')
+    .replace(/^\/+/, '')
+    .replace(/\/+/g, '/');
+}
+
+function getCommonRootPrefix(entries) {
+  const names = entries
+    .map((entry) => normalizeZipEntryName(entry.entryName))
+    .filter(Boolean);
+
+  if (names.length === 0) {
+    return '';
+  }
+
+  const firstSegments = new Set(names.map((name) => name.split('/')[0]));
+  const hasRootLevelFile = names.some((name) => !name.includes('/'));
+
+  if (firstSegments.size === 1 && !hasRootLevelFile) {
+    return names[0].split('/')[0];
+  }
+
+  return '';
+}
+
+function stripRootPrefix(entryName, rootPrefix) {
+  const normalized = normalizeZipEntryName(entryName);
+  if (!rootPrefix) {
+    return normalized;
+  }
+
+  if (normalized === rootPrefix) {
+    return '';
+  }
+
+  if (normalized.startsWith(`${rootPrefix}/`)) {
+    return normalized.slice(rootPrefix.length + 1);
+  }
+
+  return normalized;
+}
+
 function safeExtractZip(zipPath, targetDir) {
   const zip = new AdmZip(zipPath);
   const entries = zip.getEntries();
   const resolvedTarget = path.resolve(targetDir) + path.sep;
+  const rootPrefix = getCommonRootPrefix(entries);
+  const MAX_DECOMPRESSED = 200 * 1024 * 1024;
 
-  // Check total decompressed size (zip bomb defense)
   let totalSize = 0;
-  const MAX_DECOMPRESSED = 200 * 1024 * 1024; // 200MB
+  let hasIndex = false;
 
   for (const entry of entries) {
-    // Path traversal check
-    const resolvedPath = path.resolve(targetDir, entry.entryName);
+    const relativeName = stripRootPrefix(entry.entryName, rootPrefix);
+
+    if (!relativeName) {
+      continue;
+    }
+
+    const resolvedPath = path.resolve(targetDir, relativeName);
     if (!resolvedPath.startsWith(resolvedTarget)) {
-      throw new Error('Invalid ZIP: path traversal detected.');
+      throw new RequestError(400, 'Invalid ZIP: path traversal detected.');
     }
 
-    // Zip bomb check
-    totalSize += entry.header.size;
-    if (totalSize > MAX_DECOMPRESSED) {
-      throw new Error('ZIP contents too large (max 200MB decompressed).');
+    if (!entry.isDirectory) {
+      totalSize += entry.header.size;
+      if (totalSize > MAX_DECOMPRESSED) {
+        throw new RequestError(400, 'ZIP contents too large (max 200MB decompressed).');
+      }
+    }
+
+    if (relativeName === 'index.html') {
+      hasIndex = true;
     }
   }
 
-  // Verify index.html exists in the archive
-  const hasIndex = entries.some((e) => {
-    const name = e.entryName.replace(/^[^/]+\//, ''); // handle root folder
-    return name === 'index.html' || e.entryName === 'index.html';
-  });
   if (!hasIndex) {
-    throw new Error('ZIP must contain an index.html file.');
+    throw new RequestError(400, 'ZIP must contain an index.html file at the root or inside a single top-level folder.');
   }
 
-  zip.extractAllTo(targetDir, true);
+  for (const entry of entries) {
+    const relativeName = stripRootPrefix(entry.entryName, rootPrefix);
+
+    if (!relativeName) {
+      continue;
+    }
+
+    const destinationPath = path.join(targetDir, relativeName);
+    if (entry.isDirectory) {
+      fs.mkdirSync(destinationPath, { recursive: true });
+      continue;
+    }
+
+    fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+    fs.writeFileSync(destinationPath, entry.getData());
+  }
 }
 
-// POST /api/games - Upload a new game (authenticated)
-router.post('/games', requireAuth, (req, res) => {
+function processUpload(gameFile, thumbnailFile, title, description, author, tags) {
+  const gameExt = path.extname(gameFile.originalname).toLowerCase();
+  const thumbExt = path.extname(thumbnailFile.originalname).toLowerCase();
+  const id = slugify(title);
+
+  if (!id) {
+    throw new RequestError(400, 'Title must contain at least one alphanumeric character.');
+  }
+
+  return withIndexLock(() => {
+    const gamesIndex = readGamesIndex();
+
+    if (gamesIndex.some((game) => game.id === id)) {
+      throw new RequestError(409, `A game with ID "${id}" already exists.`);
+    }
+
+    const gameDir = path.join(GAMES_DIR, id);
+    fs.mkdirSync(gameDir, { recursive: true });
+
+    try {
+      if (gameExt === '.zip') {
+        safeExtractZip(gameFile.path, gameDir);
+      } else {
+        fs.copyFileSync(gameFile.path, path.join(gameDir, 'index.html'));
+      }
+
+      if (!fs.existsSync(path.join(gameDir, 'index.html'))) {
+        throw new RequestError(400, 'Game must contain an index.html file.');
+      }
+
+      const thumbnailName = `thumbnail${thumbExt}`;
+      fs.copyFileSync(thumbnailFile.path, path.join(gameDir, thumbnailName));
+
+      const parsedTags = tags
+        ? tags.split(',').map((tag) => tag.trim()).filter(Boolean)
+        : [];
+
+      const newGame = {
+        id,
+        title: title.trim(),
+        folder: id,
+        thumbnail: `games/${id}/${thumbnailName}`,
+        description: description ? description.trim() : '',
+        author: author ? author.trim() : 'Anonymous',
+        tags: parsedTags,
+        date: new Date().toISOString(),
+        plays: 0,
+        featured: false,
+      };
+
+      gamesIndex.push(newGame);
+      writeGamesIndexAtomic(gamesIndex);
+
+      return newGame;
+    } catch (error) {
+      fs.rmSync(gameDir, { recursive: true, force: true });
+      throw error;
+    }
+  });
+}
+
+router.post('/games', requireAuth, requireCsrf, (req, res) => {
   uploadFields(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
+      cleanupFiles(req.files);
       if (err.code === 'LIMIT_FILE_SIZE') {
         return res.status(413).json({ error: 'File too large. Maximum size is 50MB.' });
       }
       return res.status(400).json({ error: 'Upload error.' });
     }
+
     if (err) {
+      cleanupFiles(req.files);
       return res.status(400).json({ error: err.message });
     }
 
     try {
       const { title, description, author, tags } = req.body;
 
-      // Validate required fields
       if (!title || !title.trim()) {
-        cleanupFiles(req.files);
-        return res.status(400).json({ error: 'Title is required.' });
+        throw new RequestError(400, 'Title is required.');
       }
       if (!req.files || !req.files.gameFile || !req.files.gameFile[0]) {
-        cleanupFiles(req.files);
-        return res.status(400).json({ error: 'Game file is required.' });
+        throw new RequestError(400, 'Game file is required.');
       }
       if (!req.files.thumbnail || !req.files.thumbnail[0]) {
-        cleanupFiles(req.files);
-        return res.status(400).json({ error: 'Thumbnail is required.' });
+        throw new RequestError(400, 'Thumbnail is required.');
       }
 
       const gameFile = req.files.gameFile[0];
       const thumbnailFile = req.files.thumbnail[0];
-
-      // HIGH-9: Server-side magic bytes validation
       const gameExt = path.extname(gameFile.originalname).toLowerCase();
-      if (!validateMagicBytes(gameFile.path, gameExt)) {
-        cleanupFiles(req.files);
-        return res.status(400).json({ error: 'Game file content does not match its extension.' });
-      }
-
       const thumbExt = path.extname(thumbnailFile.originalname).toLowerCase();
+
+      if (!validateMagicBytes(gameFile.path, gameExt)) {
+        throw new RequestError(400, 'Game file content does not match its extension.');
+      }
+
       if (!validateMagicBytes(thumbnailFile.path, thumbExt)) {
-        cleanupFiles(req.files);
-        return res.status(400).json({ error: 'Thumbnail content does not match its extension.' });
+        throw new RequestError(400, 'Thumbnail content does not match its extension.');
       }
 
-      // Generate game ID from title
-      const id = slugify(title);
-      if (!id) {
-        cleanupFiles(req.files);
-        return res.status(400).json({ error: 'Title must contain at least one alphanumeric character.' });
-      }
-
-      // HIGH-8: Use file lock for index.json read/write
-      const result = await withIndexLock(() => {
-        const gamesDir = path.join(__dirname, '..', 'games');
-        const indexPath = path.join(gamesDir, 'index.json');
-        const gamesIndex = JSON.parse(fs.readFileSync(indexPath, 'utf-8'));
-
-        // Check for duplicate ID
-        if (gamesIndex.some((g) => g.id === id)) {
-          return { error: true, status: 409, message: `A game with ID "${id}" already exists.` };
-        }
-
-        // Create game directory
-        const gameDir = path.join(gamesDir, id);
-        fs.mkdirSync(gameDir, { recursive: true });
-
-        // Process game file
-        if (gameExt === '.zip') {
-          safeExtractZip(gameFile.path, gameDir);
-        } else {
-          fs.copyFileSync(gameFile.path, path.join(gameDir, 'index.html'));
-        }
-
-        // Verify index.html exists after extraction
-        if (!fs.existsSync(path.join(gameDir, 'index.html'))) {
-          fs.rmSync(gameDir, { recursive: true, force: true });
-          return { error: true, status: 400, message: 'Game must contain an index.html file.' };
-        }
-
-        // Process thumbnail
-        const thumbnailName = `thumbnail${thumbExt}`;
-        fs.copyFileSync(thumbnailFile.path, path.join(gameDir, thumbnailName));
-
-        // Parse tags
-        const parsedTags = tags
-          ? tags.split(',').map((t) => t.trim()).filter(Boolean)
-          : [];
-
-        // Build new game entry
-        const newGame = {
-          id,
-          title: title.trim(),
-          folder: id,
-          thumbnail: `games/${id}/${thumbnailName}`,
-          description: description ? description.trim() : '',
-          author: author ? author.trim() : 'Anonymous',
-          tags: parsedTags,
-          date: new Date().toISOString(),
-          plays: 0,
-          featured: false,
-        };
-
-        // Append to index.json (inside lock)
-        gamesIndex.push(newGame);
-        fs.writeFileSync(indexPath, JSON.stringify(gamesIndex, null, 2));
-
-        return { error: false, game: newGame };
-      });
-
-      cleanupFiles(req.files);
-
-      if (result.error) {
-        return res.status(result.status).json({ error: result.message });
-      }
-
-      res.status(201).json({ message: 'Game uploaded successfully.', game: result.game });
+      const game = await processUpload(gameFile, thumbnailFile, title, description, author, tags);
+      res.status(201).json({ message: 'Game uploaded successfully.', game });
     } catch (error) {
-      cleanupFiles(req.files);
+      if (error instanceof RequestError) {
+        return res.status(error.status).json({ error: error.message });
+      }
+
       console.error('Upload error:', error.message);
       res.status(500).json({ error: 'Failed to process upload.' });
+    } finally {
+      cleanupFiles(req.files);
     }
   });
 });
@@ -260,7 +324,7 @@ function cleanupFiles(files) {
         fs.unlinkSync(file.path);
       }
     } catch {
-      // Ignore cleanup errors
+      // Ignore cleanup errors.
     }
   }
 }

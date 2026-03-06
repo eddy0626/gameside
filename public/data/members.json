@@ -1,0 +1,54 @@
+[
+  {
+    "name": "Team",
+    "role": "개발",
+    "picture": "",
+    "tagline": "게임소모임 팀",
+    "bio": "함께 게임을 만듭니다.",
+    "skills": ["Unity", "C#", "JavaScript"],
+    "links": {
+      "github": "",
+      "email": "",
+      "linkedin": ""
+    }
+  },
+  {
+    "name": "김민수",
+    "role": "개발",
+    "picture": "",
+    "tagline": "게임 프로그래머",
+    "bio": "Unity와 C#을 활용한 게임 개발을 좋아합니다. 주로 게임플레이 로직과 시스템 설계를 담당하고 있으며, 클린 코드와 최적화에 관심이 많습니다.",
+    "skills": ["Unity", "C#", "Python", "Git"],
+    "links": {
+      "github": "https://github.com/example-minsu",
+      "email": "minsu@example.com",
+      "linkedin": ""
+    }
+  },
+  {
+    "name": "이서연",
+    "role": "아트",
+    "picture": "",
+    "tagline": "2D 아티스트 & 일러스트레이터",
+    "bio": "캐릭터 디자인과 UI 아트를 전문으로 합니다. 다양한 스타일의 비주얼을 구현하며, 게임의 분위기를 만들어가는 일에 열정을 가지고 있습니다.",
+    "skills": ["Photoshop", "Illustrator", "Aseprite", "Spine"],
+    "links": {
+      "github": "",
+      "email": "seoyeon@example.com",
+      "linkedin": "https://linkedin.com/in/example-seoyeon"
+    }
+  },
+  {
+    "name": "박준혁",
+    "role": "기획",
+    "picture": "",
+    "tagline": "게임 기획자",
+    "bio": "레벨 디자인과 밸런싱을 주로 담당합니다. 플레이어 경험을 최우선으로 생각하며, 데이터 기반의 기획을 지향합니다.",
+    "skills": ["Excel", "Figma", "Unity", "Notion"],
+    "links": {
+      "github": "https://github.com/example-junhyuk",
+      "email": "junhyuk@example.com",
+      "linkedin": ""
+    }
+  }
+]

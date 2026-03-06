@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const TEST_SECRET = 'test-secret-for-e2e-tests';
+const TEST_CSRF = 'test-csrf-token';
 const GAMES_INDEX_PATH = path.join(__dirname, '..', '..', 'games', 'index.json');
 
 // Set env vars before the app is required
@@ -87,6 +88,14 @@ function createTestZip() {
   return zip.toBuffer();
 }
 
+function createTestZipWithRootDir() {
+  const AdmZip = require('adm-zip');
+  const zip = new AdmZip();
+  zip.addFile('root-folder/index.html', Buffer.from('<!DOCTYPE html><html><body>Nested root folder game</body></html>'));
+  zip.addFile('root-folder/assets/readme.txt', Buffer.from('asset'));
+  return zip.toBuffer();
+}
+
 // Create a ZIP without index.html (for validation testing)
 function createTestZipNoIndex() {
   const AdmZip = require('adm-zip');
@@ -96,6 +105,7 @@ function createTestZipNoIndex() {
 }
 
 module.exports = {
+  TEST_CSRF,
   TEST_SECRET,
   GAMES_INDEX_PATH,
   generateToken,
@@ -107,5 +117,6 @@ module.exports = {
   ensureUploadsTmp,
   createTestPng,
   createTestZip,
+  createTestZipWithRootDir,
   createTestZipNoIndex,
 };

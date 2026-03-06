@@ -3,27 +3,48 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { requireAuth } = require('../middleware/auth');
+const { CSRF_COOKIE_NAME, requireAuth, requireCsrf } = require('../middleware/auth');
 
 const router = express.Router();
 
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Cookie options (reusable for set and clear)
 const cookieOptions = {
   httpOnly: true,
   secure: isProduction,
   sameSite: isProduction ? 'none' : 'lax',
-  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  maxAge: 24 * 60 * 60 * 1000,
+  path: '/',
 };
 
-// Parse allowed emails from env
+const csrfCookieOptions = {
+  httpOnly: false,
+  secure: isProduction,
+  sameSite: cookieOptions.sameSite,
+  maxAge: cookieOptions.maxAge,
+  path: '/',
+};
+
 const allowedEmails = (process.env.ALLOWED_EMAILS || '')
   .split(',')
-  .map(e => e.trim().toLowerCase())
+  .map((email) => email.trim().toLowerCase())
   .filter(Boolean);
 
-// Passport Google OAuth 2.0 strategy
+function issueCsrfCookie(res) {
+  const csrfToken = crypto.randomBytes(32).toString('hex');
+  res.cookie(CSRF_COOKIE_NAME, csrfToken, csrfCookieOptions);
+  return csrfToken;
+}
+
+function ensureCsrfCookie(req, res) {
+  const existingToken = req.cookies && req.cookies[CSRF_COOKIE_NAME];
+  if (existingToken) {
+    return existingToken;
+  }
+
+  return issueCsrfCookie(res);
+}
+
 passport.use(
   new GoogleStrategy(
     {
@@ -41,7 +62,6 @@ passport.use(
         return done(null, false, { message: 'No email found in Google profile' });
       }
 
-      // MED-6: Check email is verified
       if (emailObj.verified === false) {
         return done(null, false, { message: 'Email not verified' });
       }
@@ -51,7 +71,7 @@ passport.use(
       }
 
       const user = {
-        email: email,
+        email,
         name: profile.displayName,
         picture: profile.photos && profile.photos[0] && profile.photos[0].value,
       };
@@ -61,34 +81,32 @@ passport.use(
   )
 );
 
-// HIGH-6: Generate CSRF state and store in short-lived cookie
 router.get('/google', (req, res, next) => {
   const state = crypto.randomBytes(32).toString('hex');
   res.cookie('oauth_state', state, {
     httpOnly: true,
     secure: isProduction,
     sameSite: 'lax',
-    maxAge: 5 * 60 * 1000, // 5 minutes
+    maxAge: 5 * 60 * 1000,
+    path: '/',
   });
   passport.authenticate('google', {
     scope: ['profile', 'email'],
     session: false,
-    state: state,
+    state,
   })(req, res, next);
 });
 
-// HIGH-6: Verify state + HIGH-10: Redirect instead of JSON
 router.get('/google/callback', (req, res, next) => {
-  // Verify CSRF state
   const cookieState = req.cookies && req.cookies.oauth_state;
   const queryState = req.query.state;
 
   if (!cookieState || !queryState || cookieState !== queryState) {
-    res.clearCookie('oauth_state');
+    res.clearCookie('oauth_state', { path: '/' });
     return res.redirect('/?login=csrf_error');
   }
 
-  res.clearCookie('oauth_state');
+  res.clearCookie('oauth_state', { path: '/' });
 
   passport.authenticate('google', { session: false, failureRedirect: '/?login=failed' })(
     req, res, () => {
@@ -98,31 +116,35 @@ router.get('/google/callback', (req, res, next) => {
         picture: req.user.picture,
       };
 
-      // CRIT-3: Explicit algorithm
       const token = jwt.sign(payload, process.env.JWT_SECRET, {
         algorithm: 'HS256',
         expiresIn: '24h',
       });
 
       res.cookie('token', token, cookieOptions);
-
-      // HIGH-10: Redirect to frontend instead of returning JSON
+      issueCsrfCookie(res);
       res.redirect('/?login=success');
     }
   );
 });
 
-// GET /auth/me - Get current user info
 router.get('/me', requireAuth, (req, res) => {
-  res.json({ user: req.user });
+  const csrfToken = ensureCsrfCookie(req, res);
+  res.json({ user: req.user, csrfToken });
 });
 
-// POST /auth/logout - Clear token cookie (LOW-6: matching cookie options)
-router.post('/logout', (req, res) => {
+router.post('/logout', requireCsrf, (req, res) => {
   res.clearCookie('token', {
     httpOnly: cookieOptions.httpOnly,
     secure: cookieOptions.secure,
     sameSite: cookieOptions.sameSite,
+    path: cookieOptions.path,
+  });
+  res.clearCookie(CSRF_COOKIE_NAME, {
+    httpOnly: csrfCookieOptions.httpOnly,
+    secure: csrfCookieOptions.secure,
+    sameSite: csrfCookieOptions.sameSite,
+    path: csrfCookieOptions.path,
   });
   res.json({ message: 'Logged out' });
 });
