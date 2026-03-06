@@ -51,6 +51,10 @@ const membersRoutes = require('./routes/members');
 app.use('/api/members', membersRoutes);
 const playsRoutes = require('./routes/plays');
 app.use('/api', playsRoutes);
+const ratingsRoutes = require('./routes/ratings');
+app.use('/api', ratingsRoutes);
+const commentsRoutes = require('./routes/comments');
+app.use('/api', commentsRoutes);
 
 // API: Get games list
 app.get('/api/games', (req, res) => {

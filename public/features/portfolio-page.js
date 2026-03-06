@@ -202,7 +202,10 @@
       var gamesRes = await fetch(GAMES_API_PATH, { credentials: 'include' });
       if (!gamesRes.ok) throw new Error('Failed to load games');
       var games = await gamesRes.json();
-      var authorGames = games.filter(function (g) { return g.author === member.name; });
+      var authorGames = games.filter(function (g) {
+        return g.author === member.name ||
+          (Array.isArray(g.coAuthors) && g.coAuthors.indexOf(member.name) !== -1);
+      });
 
       var gamesGrid = document.getElementById('portfolio-games');
       var noGamesMsg = document.getElementById('portfolio-no-games');

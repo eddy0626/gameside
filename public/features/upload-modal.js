@@ -335,6 +335,56 @@
     tagsField.appendChild(tagsLabel);
     tagsField.appendChild(tagsInput);
 
+    // --- Co-authors ---
+    const coauthorsField = el('div', 'upload-modal__field upload-modal__coauthors');
+    const coauthorsLabel = el('label', 'upload-modal__coauthors-label');
+    coauthorsLabel.textContent = '\uACF5\uB3D9 \uAC1C\uBC1C\uC790';
+    coauthorsField.appendChild(coauthorsLabel);
+
+    var coauthorCheckboxes = [];
+
+    fetch('/api/members', { credentials: 'include' })
+      .then(function (res) { return res.ok ? res.json() : []; })
+      .then(function (members) {
+        var currentAuthor = authorInput.value.trim();
+        members.forEach(function (member) {
+          var name = member.name || '';
+          if (!name) return;
+
+          var option = el('label', 'upload-modal__coauthor-option');
+          var checkbox = el('input', null, { type: 'checkbox', value: name });
+          var text = document.createTextNode(' ' + name);
+          option.appendChild(checkbox);
+          option.appendChild(text);
+          coauthorsField.appendChild(option);
+          coauthorCheckboxes.push({ checkbox: checkbox, name: name });
+        });
+
+        // Hide checkboxes matching the current author
+        authorInput.addEventListener('input', function () {
+          var author = authorInput.value.trim();
+          coauthorCheckboxes.forEach(function (item) {
+            var hidden = item.name === author;
+            item.checkbox.parentNode.style.display = hidden ? 'none' : '';
+            if (hidden) item.checkbox.checked = false;
+          });
+        });
+      })
+      .catch(function () { /* ignore */ });
+
+    // --- Dev Note ---
+    const devNoteField = el('div', 'upload-modal__field');
+    const devNoteLabel = el('label', 'upload-modal__label', { for: 'upload-modal-devnote' });
+    devNoteLabel.textContent = '\uAC1C\uBC1C \uD6C4\uAE30 (\uB9C8\uD06C\uB2E4\uC6B4 \uC9C0\uC6D0)';
+    const devNoteInput = el('textarea', 'upload-modal__input upload-modal__textarea upload-modal__devnote', {
+      id: 'upload-modal-devnote',
+      placeholder: '\uAC8C\uC784 \uAC1C\uBC1C \uACFC\uC815\uC774\uB098 \uD6C4\uAE30\uB97C \uC791\uC131\uD574\uBCF4\uC138\uC694...',
+      rows: '4',
+      maxLength: '5000'
+    });
+    devNoteField.appendChild(devNoteLabel);
+    devNoteField.appendChild(devNoteInput);
+
     // --- Progress bar ---
     const progressWrap = el('div', 'upload-modal__progress-wrap');
     const progressBar = el('div', 'upload-modal__progress-bar');
@@ -359,6 +409,8 @@
     dialog.appendChild(descField);
     dialog.appendChild(authorField);
     dialog.appendChild(tagsField);
+    dialog.appendChild(coauthorsField);
+    dialog.appendChild(devNoteField);
     dialog.appendChild(progressWrap);
     dialog.appendChild(submitBtn);
 
@@ -406,6 +458,18 @@
       formData.append('description', descInput.value.trim());
       formData.append('author', authorInput.value.trim());
       formData.append('tags', tagsInput.value.trim());
+
+      var selectedCoAuthors = [];
+      coauthorCheckboxes.forEach(function (item) {
+        if (item.checkbox.checked) {
+          selectedCoAuthors.push(item.name);
+        }
+      });
+      if (selectedCoAuthors.length > 0) {
+        formData.append('coAuthors', JSON.stringify(selectedCoAuthors));
+      }
+
+      formData.append('devNote', devNoteInput.value.trim());
 
       const xhr = new XMLHttpRequest();
 

@@ -195,7 +195,7 @@ function safeExtractZip(zipPath, targetDir) {
   }
 }
 
-function processUpload(gameFile, thumbnailFile, title, description, author, tags) {
+function processUpload(gameFile, thumbnailFile, title, description, author, tags, devNote, coAuthors) {
   const gameExt = path.extname(gameFile.originalname).toLowerCase();
   const thumbExt = path.extname(thumbnailFile.originalname).toLowerCase();
   const id = slugify(title);
@@ -245,6 +245,14 @@ function processUpload(gameFile, thumbnailFile, title, description, author, tags
         featured: false,
       };
 
+      if (devNote) {
+        newGame.devNote = devNote;
+      }
+
+      if (coAuthors && coAuthors.length > 0) {
+        newGame.coAuthors = coAuthors;
+      }
+
       gamesIndex.push(newGame);
       writeGamesIndexAtomic(gamesIndex);
 
@@ -273,6 +281,27 @@ router.post('/games', requireAuth, requireCsrf, (req, res) => {
 
     try {
       const { title, description, author, tags } = req.body;
+      var devNote = req.body.devNote;
+      if (devNote) {
+        devNote = String(devNote).trim().slice(0, 5000);
+      }
+
+      var coAuthors = [];
+      if (req.body.coAuthors) {
+        try {
+          var parsed = typeof req.body.coAuthors === 'string'
+            ? JSON.parse(req.body.coAuthors)
+            : req.body.coAuthors;
+          if (Array.isArray(parsed)) {
+            coAuthors = parsed
+              .map(function (s) { return String(s).trim(); })
+              .filter(Boolean)
+              .slice(0, 10);
+          }
+        } catch (_) {
+          // ignore malformed coAuthors
+        }
+      }
 
       if (!title || !title.trim()) {
         throw new RequestError(400, 'Title is required.');
@@ -297,7 +326,7 @@ router.post('/games', requireAuth, requireCsrf, (req, res) => {
         throw new RequestError(400, 'Thumbnail content does not match its extension.');
       }
 
-      const game = await processUpload(gameFile, thumbnailFile, title, description, author, tags);
+      const game = await processUpload(gameFile, thumbnailFile, title, description, author, tags, devNote, coAuthors);
       res.status(201).json({ message: 'Game uploaded successfully.', game });
     } catch (error) {
       if (error instanceof RequestError) {

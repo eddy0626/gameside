@@ -72,6 +72,15 @@
     body.appendChild(title);
     body.appendChild(desc);
     body.appendChild(author);
+
+    if (game.coAuthors && game.coAuthors.length > 0) {
+      var coauthorBadge = document.createElement('span');
+      coauthorBadge.className = 'game-card__coauthors';
+      coauthorBadge.textContent = '+' + game.coAuthors.length + '\uBA85';
+      coauthorBadge.title = game.coAuthors.join(', ');
+      body.appendChild(coauthorBadge);
+    }
+
     body.appendChild(plays);
     card.appendChild(thumb);
     card.appendChild(body);

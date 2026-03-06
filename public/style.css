@@ -1519,3 +1519,295 @@ a.game-card__author:hover {
         align-items: center;
     }
 }
+
+/* --- Game Dev Notes --- */
+.game-devnote {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+}
+
+.game-devnote__title {
+    font-family: var(--font-heading);
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+}
+
+.game-devnote__content {
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
+.game-devnote__content h1,
+.game-devnote__content h2,
+.game-devnote__content h3 { color: var(--text-primary); margin: 1rem 0 0.5rem; }
+.game-devnote__content p { margin-bottom: 0.75rem; }
+.game-devnote__content code { background: var(--bg-surface); padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.9em; }
+.game-devnote__content pre { background: var(--bg-surface); padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1rem; }
+.game-devnote__content pre code { background: none; padding: 0; }
+.game-devnote__content a { color: var(--neon-cyan); }
+.game-devnote__content ul, .game-devnote__content ol { padding-left: 1.5rem; margin-bottom: 0.75rem; }
+.game-devnote__content blockquote { border-left: 3px solid var(--neon-purple); padding-left: 1rem; color: var(--text-muted); margin-bottom: 0.75rem; }
+.game-devnote__content img { max-width: 100%; border-radius: 8px; }
+
+/* ==========================================================================
+   Game Ratings
+   ========================================================================== */
+
+.game-ratings {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding: 0.75rem 0;
+}
+
+.game-ratings__stars {
+    display: flex;
+    gap: 0.15rem;
+}
+
+.game-ratings__star {
+    cursor: pointer;
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    transition: color var(--transition), text-shadow var(--transition);
+    user-select: none;
+    line-height: 1;
+}
+
+.game-ratings__star:hover,
+.game-ratings__star--hover {
+    color: var(--neon-cyan);
+    text-shadow: var(--glow-cyan);
+}
+
+.game-ratings__star--active {
+    color: var(--neon-cyan);
+}
+
+.game-ratings__star--mine {
+    text-shadow: var(--glow-cyan);
+}
+
+.game-ratings__info {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* ==========================================================================
+   Game Comments
+   ========================================================================== */
+
+.game-comments {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.game-comments__title {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.game-comments__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.game-comments__input {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.75rem 1rem;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    outline: none;
+    resize: vertical;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.game-comments__input::placeholder {
+    color: var(--text-muted);
+}
+
+.game-comments__input:focus {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.15);
+}
+
+.game-comments__submit {
+    align-self: flex-end;
+    padding: 0.55rem 1.5rem;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    background: var(--neon-purple);
+    border: 1px solid var(--neon-purple);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.game-comments__submit:hover {
+    box-shadow: 0 0 16px rgba(124, 58, 237, 0.5);
+    background: #6d28d9;
+}
+
+.game-comments__submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.game-comments__login-notice {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.game-comments__empty {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1.5rem 0;
+}
+
+.game-comments__item {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.game-comments__item:last-child {
+    border-bottom: none;
+}
+
+.game-comments__item-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.4rem;
+}
+
+.game-comments__item-author {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.game-comments__item-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.game-comments__item-delete {
+    margin-left: auto;
+    padding: 0.2rem 0.6rem;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.game-comments__item-delete:hover {
+    color: #ef4444;
+    border-color: #ef4444;
+}
+
+.game-comments__item-delete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.game-comments__item-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* ==========================================================================
+   Co-authors
+   ========================================================================== */
+
+/* Co-authors - Game Detail */
+.game-coauthors {
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.game-coauthors__label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.game-coauthors__link {
+    color: var(--neon-cyan);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: var(--transition);
+}
+
+.game-coauthors__link:hover {
+    text-shadow: var(--glow-cyan);
+}
+
+.game-coauthors__separator {
+    color: var(--text-muted);
+}
+
+/* Co-authors - Gallery Card */
+.game-card__coauthors {
+    display: inline-block;
+    font-size: 0.75rem;
+    color: var(--neon-purple);
+    background: rgba(124, 58, 237, 0.15);
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+}
+
+/* Co-authors - Upload Modal */
+.upload-modal__coauthors {
+    margin-top: 0.75rem;
+}
+
+.upload-modal__coauthors-label {
+    display: block;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.upload-modal__coauthor-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.upload-modal__coauthor-option input[type="checkbox"] {
+    accent-color: var(--neon-purple);
+}
