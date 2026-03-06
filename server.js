@@ -38,6 +38,22 @@ app.get('/api/games', (req, res) => {
   });
 });
 
+// Unity WebGL Brotli/Gzip compressed files — must be served with correct headers
+app.use('/games', (req, res, next) => {
+  if (req.path.endsWith('.br')) {
+    res.set('Content-Encoding', 'br');
+    if (req.path.endsWith('.js.br')) res.set('Content-Type', 'application/javascript');
+    else if (req.path.endsWith('.wasm.br')) res.set('Content-Type', 'application/wasm');
+    else if (req.path.endsWith('.data.br')) res.set('Content-Type', 'application/octet-stream');
+  } else if (req.path.endsWith('.gz')) {
+    res.set('Content-Encoding', 'gzip');
+    if (req.path.endsWith('.js.gz')) res.set('Content-Type', 'application/javascript');
+    else if (req.path.endsWith('.wasm.gz')) res.set('Content-Type', 'application/wasm');
+    else if (req.path.endsWith('.data.gz')) res.set('Content-Type', 'application/octet-stream');
+  }
+  next();
+});
+
 // Static files: only public/ and games/ are served (source code is NOT exposed)
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/games', express.static(path.join(__dirname, 'games')));
