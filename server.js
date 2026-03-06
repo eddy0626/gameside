@@ -24,8 +24,9 @@ if (PORT === GAMES_PORT) {
   throw new Error('GAMES_PORT must be different from PORT.');
 }
 
-if (isProduction && !process.env.GAMES_PUBLIC_ORIGIN) {
-  throw new Error('GAMES_PUBLIC_ORIGIN must be set in production.');
+// In single-port deployments (e.g. Railway), default GAMES_PUBLIC_ORIGIN to FRONTEND_URL
+if (!process.env.GAMES_PUBLIC_ORIGIN && process.env.FRONTEND_URL) {
+  process.env.GAMES_PUBLIC_ORIGIN = process.env.FRONTEND_URL;
 }
 
 // Trust proxy (Railway, Heroku, etc. terminate SSL at the proxy)
@@ -76,6 +77,24 @@ gamesApp.use('/games', (req, res, next) => {
 
 // Static files: the main app serves public/, while uploaded games are isolated.
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Also serve /games from main app for single-port platforms (Railway, etc.)
+app.use('/games', (req, res, next) => {
+  if (req.path.endsWith('.br')) {
+    res.set('Content-Encoding', 'br');
+    if (req.path.endsWith('.js.br')) res.set('Content-Type', 'application/javascript');
+    else if (req.path.endsWith('.wasm.br')) res.set('Content-Type', 'application/wasm');
+    else if (req.path.endsWith('.data.br')) res.set('Content-Type', 'application/octet-stream');
+  } else if (req.path.endsWith('.gz')) {
+    res.set('Content-Encoding', 'gzip');
+    if (req.path.endsWith('.js.gz')) res.set('Content-Type', 'application/javascript');
+    else if (req.path.endsWith('.wasm.gz')) res.set('Content-Type', 'application/wasm');
+    else if (req.path.endsWith('.data.gz')) res.set('Content-Type', 'application/octet-stream');
+  }
+  next();
+});
+app.use('/games', express.static(GAMES_DIR));
+
 gamesApp.use('/games', express.static(GAMES_DIR));
 
 // Start server (only when run directly, not when imported for tests)
