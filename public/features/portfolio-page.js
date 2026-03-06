@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  var MEMBERS_JSON_PATH = 'data/members.json';
+  var MEMBERS_JSON_PATH = '/api/members';
   var GAMES_API_PATH = '/api/games';
 
   function getQueryParam(key) {
@@ -70,6 +70,12 @@
       a.innerHTML = item.icon + '<span>' + item.label + '</span>';
       container.appendChild(a);
     });
+  }
+
+  function getCsrfToken() {
+    if (window.gamesideCsrfToken) return window.gamesideCsrfToken;
+    var match = document.cookie.match(new RegExp('(?:^|; )csrf_token=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : '';
   }
 
   function showError(message) {
@@ -215,6 +221,187 @@
       document.getElementById('portfolio-no-games').textContent = 'Failed to load games.';
       document.getElementById('portfolio-no-games').style.display = '';
     }
+
+    // --- Check if this is the logged-in user's own page ---
+    try {
+      var meRes = await fetch('/auth/me', { credentials: 'include' });
+      if (meRes.ok) {
+        var meData = await meRes.json();
+        var loggedInEmail = meData.user && meData.user.email;
+        if (loggedInEmail && member.email && loggedInEmail.toLowerCase() === member.email.toLowerCase()) {
+          showEditButton(member, members);
+        }
+      }
+    } catch (e) {
+      // Not logged in or error — no edit button
+    }
+  }
+
+  function showEditButton(member, members) {
+    var profileSection = document.querySelector('.portfolio__profile');
+    if (!profileSection) return;
+
+    var editBtn = document.createElement('button');
+    editBtn.className = 'portfolio__edit-btn';
+    editBtn.textContent = '편집';
+    editBtn.type = 'button';
+    profileSection.appendChild(editBtn);
+
+    editBtn.addEventListener('click', function () {
+      enterEditMode(member);
+    });
+  }
+
+  function enterEditMode(member) {
+    var profileSection = document.querySelector('.portfolio__profile');
+    var bioSection = document.getElementById('portfolio-bio');
+    var skillsContainer = document.getElementById('portfolio-skills');
+    var linksContainer = document.getElementById('portfolio-links');
+
+    // Hide edit button
+    var editBtn = profileSection.querySelector('.portfolio__edit-btn');
+    if (editBtn) editBtn.style.display = 'none';
+
+    // Create edit form overlay
+    var form = document.createElement('div');
+    form.className = 'portfolio__edit-form';
+
+    var linksObj = member.links || {
+      github: member.github || '',
+      email: member.email || '',
+      linkedin: member.linkedin || ''
+    };
+
+    form.innerHTML =
+      '<label class="portfolio__edit-label">역할' +
+      '<input class="portfolio__edit-input" name="role" value="' + escapeAttr(member.role || '') + '" placeholder="예: 개발, 디자인, 기획">' +
+      '</label>' +
+      '<label class="portfolio__edit-label">한 줄 소개' +
+      '<textarea class="portfolio__edit-textarea" name="bio" rows="3" placeholder="자기소개를 입력하세요">' + escapeHtml(member.bio || '') + '</textarea>' +
+      '</label>' +
+      '<label class="portfolio__edit-label">기술 스택 (콤마로 구분)' +
+      '<input class="portfolio__edit-input" name="skills" value="' + escapeAttr((member.skills || []).join(', ')) + '" placeholder="예: Unity, C#, Blender">' +
+      '</label>' +
+      '<label class="portfolio__edit-label">GitHub URL' +
+      '<input class="portfolio__edit-input" name="github" value="' + escapeAttr(linksObj.github || '') + '" placeholder="https://github.com/username">' +
+      '</label>' +
+      '<label class="portfolio__edit-label">LinkedIn URL' +
+      '<input class="portfolio__edit-input" name="linkedin" value="' + escapeAttr(linksObj.linkedin || '') + '" placeholder="https://linkedin.com/in/username">' +
+      '</label>' +
+      '<div class="portfolio__edit-actions">' +
+      '<button type="button" class="portfolio__save-btn">저장</button>' +
+      '<button type="button" class="portfolio__cancel-btn">취소</button>' +
+      '</div>';
+
+    // Insert form after profile section
+    profileSection.parentNode.insertBefore(form, profileSection.nextSibling);
+
+    // Cancel handler
+    form.querySelector('.portfolio__cancel-btn').addEventListener('click', function () {
+      form.parentNode.removeChild(form);
+      if (editBtn) editBtn.style.display = '';
+    });
+
+    // Save handler
+    form.querySelector('.portfolio__save-btn').addEventListener('click', async function () {
+      var role = form.querySelector('[name="role"]').value.trim();
+      var bio = form.querySelector('[name="bio"]').value.trim();
+      var skillsRaw = form.querySelector('[name="skills"]').value.trim();
+      var github = form.querySelector('[name="github"]').value.trim();
+      var linkedin = form.querySelector('[name="linkedin"]').value.trim();
+
+      var skills = skillsRaw ? skillsRaw.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
+
+      var saveBtn = form.querySelector('.portfolio__save-btn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = '저장 중...';
+
+      try {
+        var putRes = await fetch('/api/members/' + encodeURIComponent(member.id || member.name), {
+          method: 'PUT',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+          },
+          body: JSON.stringify({ role: role, bio: bio, skills: skills, github: github, linkedin: linkedin })
+        });
+
+        if (!putRes.ok) {
+          var errData = await putRes.json().catch(function () { return {}; });
+          throw new Error(errData.error || 'Failed to save');
+        }
+
+        // Update member object in place
+        member.role = role;
+        member.bio = bio;
+        member.skills = skills;
+        member.github = github;
+        member.linkedin = linkedin;
+        if (member.links) {
+          member.links.github = github;
+          member.links.linkedin = linkedin;
+        }
+
+        // Update displayed fields
+        var roleEl = document.getElementById('portfolio-role');
+        if (role) {
+          roleEl.textContent = role;
+          roleEl.style.display = '';
+        } else {
+          roleEl.style.display = 'none';
+        }
+
+        var bioEl = document.getElementById('portfolio-bio');
+        if (bio) {
+          bioEl.textContent = bio;
+          bioEl.parentElement.style.display = '';
+        } else {
+          bioEl.textContent = '';
+          bioEl.parentElement.style.display = 'none';
+        }
+
+        // Re-render skills
+        var skillsEl = document.getElementById('portfolio-skills');
+        skillsEl.innerHTML = '';
+        if (skills.length > 0) {
+          skillsEl.parentElement.style.display = '';
+          skills.forEach(function (skill) {
+            var tag = document.createElement('span');
+            tag.className = 'portfolio__skill-tag';
+            tag.textContent = skill;
+            skillsEl.appendChild(tag);
+          });
+        } else {
+          skillsEl.parentElement.style.display = 'none';
+        }
+
+        // Re-render links
+        var linksEl = document.getElementById('portfolio-links');
+        linksEl.innerHTML = '';
+        renderLinks(linksEl, {
+          github: github,
+          email: member.email || '',
+          linkedin: linkedin
+        });
+
+        // Remove form and show edit button
+        form.parentNode.removeChild(form);
+        if (editBtn) editBtn.style.display = '';
+      } catch (err) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '저장';
+        alert('저장 실패: ' + err.message);
+      }
+    });
+  }
+
+  function escapeAttr(str) {
+    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   init();

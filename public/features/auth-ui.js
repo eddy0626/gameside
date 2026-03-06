@@ -84,6 +84,18 @@
       color: #ef4444;
     }
 
+    .auth__btn--mypage {
+      background: var(--bg-card);
+      color: var(--neon-cyan);
+      border-color: var(--neon-cyan);
+      text-decoration: none;
+    }
+
+    .auth__btn--mypage:hover {
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.3);
+      background: rgba(6, 182, 212, 0.1);
+    }
+
     .auth__toast {
       position: fixed;
       top: 1rem;
@@ -205,6 +217,17 @@
       username.style.textDecoration = 'none';
       username.style.color = 'inherit';
       authContainer.appendChild(username);
+
+      // My Page button
+      const myPageBtn = document.createElement('a');
+      myPageBtn.className = 'auth__btn auth__btn--mypage';
+      myPageBtn.textContent = '내 페이지';
+      if (matchedMember) {
+        myPageBtn.href = 'portfolio.html?name=' + encodeURIComponent(matchedMember.name);
+      } else {
+        myPageBtn.href = 'portfolio.html?name=' + encodeURIComponent(displayName);
+      }
+      authContainer.appendChild(myPageBtn);
 
       // Upload Game button
       const uploadBtn = document.createElement('button');

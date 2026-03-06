@@ -47,6 +47,8 @@ const uploadRoutes = require('./routes/upload');
 app.use('/api', uploadRoutes);
 const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
+const membersRoutes = require('./routes/members');
+app.use('/api/members', membersRoutes);
 
 // API: Get games list
 app.get('/api/games', (req, res) => {
